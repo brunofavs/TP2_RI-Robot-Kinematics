@@ -24,21 +24,18 @@ tree.handlers.log = patch('Vertices', V_log, 'Faces', F_log, 'FaceColor', ' #575
 tree.handlers.cone = patch('Vertices', V_cone, 'Faces', F_cone, 'FaceColor', '#11ff14 ', 'EdgeAlpha', 0.1);
 tree.handlers.aux_cone = patch('Vertices', V_aux_cone, 'Faces', F_aux_cone, 'FaceColor', ' #34f637', 'FaceAlpha', 0.1, 'EdgeAlpha', 0);
 
-
 V_log_homogenous = [V_log'; ones(1, size(V_log, 1))];
 V_cone_homogenous = [V_cone'; ones(1, size(V_cone, 1))];
 V_aux_cone_homogenous = [V_aux_cone'; ones(1, size(V_aux_cone, 1))];
 
-initial_tree_transform = trans(config.tree_ofset,0,0)*trans(0,2222,0)*rotx(pi/2);
-V_log_homogenous =initial_tree_transform * V_log_homogenous;
-V_cone_homogenous =initial_tree_transform * V_cone_homogenous;
-V_aux_cone_homogenous =initial_tree_transform * V_aux_cone_homogenous;
-
+initial_tree_transform = trans(config.tree_ofset, 0, 0) * trans(0, 2222, 0) * rotx(pi / 2);
+V_log_homogenous = initial_tree_transform * V_log_homogenous;
+V_cone_homogenous = initial_tree_transform * V_cone_homogenous;
+V_aux_cone_homogenous = initial_tree_transform * V_aux_cone_homogenous;
 
 tree.handlers.log.Vertices = V_log_homogenous(1:3, :)';
 tree.handlers.cone.Vertices = V_cone_homogenous(1:3, :)';
 tree.handlers.aux_cone.Vertices = V_aux_cone_homogenous(1:3, :)';
-      
 
 % setViewOptionsDefault();
 setViewOptions([-1000, 10000, -5000, 5000, 0, 3000]);
@@ -75,32 +72,59 @@ DH = [theta_1, 0, La, -pi / 2;
       theta_5 + pi / 2, Le, 0, 0;
       theta_6, 0, 0, -pi / 2;
       0, 0, Lf_min + d7, pi / 2;
-      pi / 2 + theta_8, Lg, 0, pi / 2,
+      pi / 2 + theta_8, Lg, 0, pi / 2;
       theta_9, Lh, 0, 0];
 
 % R,R
-jTypes = [0, 0, 0, 0, 0, 0, 1, 0,0];
+jTypes = [0, 0, 0, 0, 0, 0, 1, 0, 0];
 sScale = 400;
-NN = 1000;
+NN = 100;
+
+AAA_initial = calculateRobotMotion(DH);
+AAA_1_5 = AAA_initial(:,:,1)*AAA_initial(:,:,2)*AAA_initial(:,:,3)*AAA_initial(:,:,4)*AAA_initial(:,:,5)
+Pw = AAA_1_5 * [0,0,0,1]';
 
 % Initial state of every joint
-q1 = [theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, d7, theta_8,theta_9]';
+q1 = [theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, d7, theta_8, theta_9]';
 
 % Final state of every joint
 
-theta_1 = 0;
-theta_2 = 0;
-theta_3 = 0;
-theta_4 = 0;
-theta_5 = 0;
-theta_6 = 0;
-d7 = dLf_max;
-theta_8 = 0;
-theta_9 = 0;
+Q12 = invKinRR3D(Lb * cos(0) * cos(pi / 8), 0, La + Lb * sin(pi / 8), La, Lb)
 
-q2 = [theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, d7, theta_8,theta_9]';
+Q4 = invKinLift(-Ld * cos(pi / 4), -Ld * sin(pi / 4) + Le, 0, Lc, Ld, Le);
+
+%Q69 = invKin69  (863,3699,0,   Lh,Lf_min,Lg)
+%Q69 = invKinGlobal(5370,0,1640,AAA_1_5,Lh,Lf_min,Lg)
+Q69 = invKinGlobal(5300,520,1040,AAA_1_5,Lh,Lf_min,Lg)
+% theta_1 = Q12(1);
+% theta_2 = Q12(2);
+theta_1 = 0;
+%theta_2 = 0;
+theta_3 = -theta_2;
+% theta_4 = Q4; % Only affects z
+theta_4 = 0;
+theta_5 = -theta_4;
+
+% theta_6 = -0.5;
+% % d7 = dLf_max;
+% d7 = 0;
+% theta_8 = -theta_6;
+% theta_9 = 0;
+
+theta_6 = Q69(1,1);
+d7      = Q69(2,1);
+theta_8 = Q69(3,1);
+theta_9 = Q69(4,1);
+
+
+
+q2 = [theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, d7, theta_8, theta_9]';
 
 QQ = [q1, q2];
+
+
+
+
 
 [H, h, P, AAA] = initRobot(QQ, NN, DH, jTypes, sScale);
 
