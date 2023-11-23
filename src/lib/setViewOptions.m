@@ -4,7 +4,8 @@ function setViewOptions(limits)
     subtitle("Press a key to start")
     fontname("Fira Code SemiBold")
 
-    view(135, 25)
+    %view(135, 25)
+    view(-135, 25)
     grid on
     axis equal
     xlabel('x'); ylabel('y'); zlabel('z')
