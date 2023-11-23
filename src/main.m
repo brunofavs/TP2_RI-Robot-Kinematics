@@ -54,21 +54,21 @@ n = 1;
 
 % Generating edge points
 for i = 1:10
-      radius = (((((TH/5)*n)/TH)*TB)/2);
+    radius = (((((TH / 5) * n) / TH) * TB) / 2);
 
-      % x = first_vertical_point(1)-radius;
-      
-      x = first_vertical_point(1) - sqrt((radius+500)^2-radius^2)+500; 
-      y = first_vertical_point(2)+flip_flop*radius;
-      z = first_vertical_point(3)-n*(TH/5);
+    % x = first_vertical_point(1)-radius;
 
+    x = first_vertical_point(1) - sqrt((radius + 500) ^ 2 - radius ^ 2) + 500;
+    y = first_vertical_point(2) + flip_flop * radius;
+    z = first_vertical_point(3) - n * (TH / 5);
 
-      flip_flop = flip_flop * (-1);
+    flip_flop = flip_flop * (-1);
 
-      if mod(i,2)==0
-            n = n +1;
-      end
-      edge_points(:,end+1) = [x,y,z]';
+    if mod(i, 2) == 0
+        n = n +1;
+    end
+
+    edge_points(:, end + 1) = [x, y, z]';
 end
 
 % Generating mid points
@@ -78,44 +78,54 @@ linear_generation = 1;
 trajectory_points = [first_vertical_point];
 
 n = 1;
+
 for i = 1:10
 
-      radius = (((((TH/5)*n)/TH)*TB)/2);
+    radius = (((((TH / 5) * n) / TH) * TB) / 2);
 
-      if linear_generation == 1 
+    if linear_generation == 1
 
-            point1 = edge_points(:,i);
-            point2 = edge_points(:,i+1);
+        point1 = edge_points(:, i);
+        point2 = edge_points(:, i + 1);
 
-            linear_points = linspaceVect(point1,point2,100)
+        linear_points = linspaceVect(point1, point2, 100);
 
-            trajectory_points = [trajectory_points linear_points];
+        trajectory_points = [trajectory_points linear_points];
 
-      else
-            % Define two points
-            point1 = edge_points(:,i);
-            point2 = edge_points(:,i+1);
+    else
+        % Define two points
+        point1 = edge_points(:, i);
+        point2 = edge_points(:, i + 1);
 
-            point3 = (point1+point2)/2;
-            point3(1) = first_vertical_point(1) - radius;
+        point3 = (point1 + point2) / 2;
+        point3(1) = first_vertical_point(1) - radius;
 
-            arc_points = arc3(point1', point3', point2'); % Points for 1 arc
-            arc_points = arc_points';
+        arc_points = arc3(point1', point3', point2'); % Points for 1 arc
+        arc_points = arc_points';
 
-            % Specify the radius of the circle
-            
-            trajectory_points = [trajectory_points arc_points];
+        % Specify the radius of the circle
 
-            if mod(i,2)==0
-                  n = n +1;
-            end
-      end
+        trajectory_points = [trajectory_points arc_points];
 
-linear_generation = linear_generation * (-1);
+        if mod(i, 2) == 0
+            n = n +1;
+        end
+
+    end
+
+    linear_generation = linear_generation * (-1);
 
 end
 
-h_trajectory = line(trajectory_points(1,:), trajectory_points(2,:), trajectory_points(3,:),'LineWidth',3,'Marker','.','MarkerSize',20);
+h_trajectory = line(trajectory_points(1, :), trajectory_points(2, :), trajectory_points(3, :), 'LineWidth', 3, 'Marker', '.', 'MarkerSize', 20);
+
+% Calculating mid arc points :
+
+mid_arc_points = [];
+
+for i = 1:2:9
+    mid_arc_points = [mid_arc_points, [trajectory_points(1, i * 100 + 51), trajectory_points(2, i * 100 + 51), trajectory_points(3, i * 100 + 51)]'];
+end
 
 %* -------------------
 %* Robot Initialization
@@ -159,7 +169,7 @@ sScale = 400;
 NN = 100;
 
 AAA_initial = calculateRobotMotion(DH);
-AAA_1_5 = AAA_initial(:, :, 1) * AAA_initial(:, :, 2) * AAA_initial(:, :, 3) * AAA_initial(:, :, 4) * AAA_initial(:, :, 5)
+AAA_1_5 = AAA_initial(:, :, 1) * AAA_initial(:, :, 2) * AAA_initial(:, :, 3) * AAA_initial(:, :, 4) * AAA_initial(:, :, 5);
 Pw = AAA_1_5 * [0, 0, 0, 1]';
 
 % Initial state of every joint
@@ -167,32 +177,24 @@ q1 = [theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, d7, theta_8, theta_9
 
 % Final state of every joint
 
-Q12 = invKinRR3D(Lb * cos(0) * cos(pi / 8), 0, La + Lb * sin(pi / 8), La, Lb)
+% Q12 = invKinRR3D(Lb * cos(0) * cos(pi / 8), 0, La + Lb * sin(pi / 8), La, Lb);
+% Q4 = invKinLift(-Ld * cos(pi / 4), -Ld * sin(pi / 4) + Le, 0, Lc, Ld, Le);
 
-Q4 = invKinLift(-Ld * cos(pi / 4), -Ld * sin(pi / 4) + Le, 0, Lc, Ld, Le);
 
-%Q69 = invKin69  (863,3699,0,   Lh,Lf_min,Lg)
-%Q69 = invKinGlobal(5370,0,1640,AAA_1_5,Lh,Lf_min,Lg)
-Q69 = invKinGlobal(trajectory_points(1,1),trajectory_points(2,1),trajectory_points(3,1), AAA_1_5, Lh, Lf_min, Lg)
-% theta_1 = Q12(1);
-% theta_2 = Q12(2);
-theta_1 = 0;
+Q1_69 = invKinGlobal(trajectory_points(1, 120), trajectory_points(2, 120), trajectory_points(3, 120), AAA_1_5, Lh, Lf_min, Lg, mid_arc_points,first_vertical_point)
+
 %theta_2 = 0;
 theta_3 = -theta_2;
 % theta_4 = Q4; % Only affects z
+
 theta_4 = 0;
 theta_5 = -theta_4;
 
-% theta_6 = -0.5;
-% % d7 = dLf_max;
-% d7 = 0;
-% theta_8 = -theta_6;
-% theta_9 = 0;
-
-theta_6 = Q69(1, 1);
-d7 = Q69(2, 1);
-theta_8 = Q69(3, 1);
-theta_9 = Q69(4, 1);
+theta_1 = Q1_69(1);
+theta_6 = Q1_69(2);
+d7      = Q1_69(3);
+theta_8 = Q1_69(4);
+theta_9 = Q1_69(5);
 
 q2 = [theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, d7, theta_8, theta_9]';
 
@@ -200,8 +202,6 @@ QQ = [q1, q2];
 
 [H, h, P, AAA] = initRobot(QQ, NN, DH, jTypes, sScale);
 
-waitforbuttonpress
-waitforbuttonpress
 waitforbuttonpress
 
 animateRobot(H, AAA, P, h, 0.01, 0)
