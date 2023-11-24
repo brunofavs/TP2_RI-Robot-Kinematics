@@ -1,11 +1,11 @@
-function [Q1_69] = invKinGlobal(x, y, z, AAA_1_5, Lh, Lf_min, Lg, mid_arc_points, P0, previous_Q1_69,first_vertical_point)
+function [Q1_69,phi] = invKinGlobal(x, y, z, AAA_1_5, Lh, Lf_min, Lg, mid_arc_points, P0, previous_Q1_69,previous_phi, first_vertical_point)
     addpath("./lib")
 
     % P6 = [x, y, z, 1]' -AAA_1_5 * [0, 0, 0, 1]';
     P6 = [x, y, z, 1]' - [0, 0, 2568.71, 1]';
 
-    if abs(P6(3)) < 0.000001
-        P6(3) = 0.000001;
+    if abs(P6(3)) < 0.0001
+        P6(3) = 0.0001;
     end
 
     % Compute tool angle
@@ -34,9 +34,21 @@ function [Q1_69] = invKinGlobal(x, y, z, AAA_1_5, Lh, Lf_min, Lg, mid_arc_points
         Q1_69(2) = theta_6;
         Q1_69(3) = d7;
         Q1_69(4) = theta_8;
-        Q1_69(5) = previous_Q1_69(5);
 
-        return
+        if previous_phi == NaN
+            phi = 0
+        else
+            phi = previous_phi
+        end
+
+        try
+            Q1_69(5) = previous_Q1_69(5);
+        catch
+            warning('Previous arc orientation not found');
+
+            Q1_69(5) = 0.53;
+            Q1_69(1) = -0.145;
+        end
 
     end
 
@@ -44,28 +56,41 @@ function [Q1_69] = invKinGlobal(x, y, z, AAA_1_5, Lh, Lf_min, Lg, mid_arc_points
 
     P0_adjusted = [P0(1); P0(2); z];
     Pf = [x; y; z];
-    Pi = arc_point;
 
-    radius = abs(P0_adjusted(1) - arc_point(1));
+    if ~isempty(arc_point)
+        Pi = arc_point;
+    end
 
-    vector1 = Pi - P0;
-    vector2 = Pf - P0;
+    TH = 4000;
+    TB = 3400;
 
-    % phi = atan2(norm(cross(vector1,vector2)),dot(vector1,vector2));
-    phi = acos(dot(vector1, vector2) / (norm(vector1) * norm(vector2)));
+    %radius = abs(P0_adjusted(1) - arc_point(1))
 
-    cross_vect = cross(vector1, vector2);
+    heigth = (first_vertical_point(3) - z)
+    radius = (heigth / TH * TB) / 2
 
-    if cross_vect(3) > 0
-        phi = -phi;
+    if ~isempty(arc_point)
+        vector1 = Pi - P0;
+        vector2 = Pf - P0;
+
+        % phi = atan2(norm(cross(vector1,vector2)),dot(vector1,vector2));
+
+        %!!! Need to round because was giving very small complex numbers when it was close to 1
+        phi = acos(round(dot(vector1, vector2) / (norm(vector1) * norm(vector2)),3));
+        cross_vect = cross(vector1, vector2);
+
+        if cross_vect(3) > 0
+            phi = -phi;
+        end
+
     end
 
     % Compute 2 new angles theta_1 and theta_9
-    L_fixed = radius + Lh+500;
+    L_fixed = radius + Lh + 500;
     % Li = (Lf_min + d7) * (cos(abs(theta_6))) +Lg + Lh + radius+500;
-    
-    Li =first_vertical_point(1)+500;
-    L_angled_wrong = (Lf_min + d7) * (cos(abs(theta_6))) + Lg;
+
+    Li = first_vertical_point(1) + 500;
+    %L_angled_wrong = (Lf_min + d7) * (cos(abs(theta_6))) + Lg;
 
     L_angled = sqrt(L_fixed ^ 2 + Li ^ 2 - 2 * L_fixed * Li * cos(phi));
 
@@ -74,6 +99,8 @@ function [Q1_69] = invKinGlobal(x, y, z, AAA_1_5, Lh, Lf_min, Lg, mid_arc_points
     theta_1 = asin((sin(phi) * L_fixed) / L_angled);
     theta_9 =- asin((sin(phi) * Li) / L_angled);
     d7 = (L_angled - Lf_min * cos(abs(theta_6)) - Lg) / cos(abs(theta_6));
+
+
 
     % disp("Theta1")
     % disp(rad2deg(theta_1))

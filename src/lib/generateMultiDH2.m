@@ -19,5 +19,11 @@ for n = 1:size(MQ,2)
             %A junta j é rotacional, incrementar theta
             MDH(j,1,n) = MDH(j,1,n) + MQ(j,n);
         end
+
+        if ~isreal(MDH)
+            disp("MDH COMPLEX")
+        end
+
+        
     end
 end

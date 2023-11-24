@@ -190,9 +190,11 @@ Pw = AAA_1_5 * [0, 0, 0, 1]';
 Pw = AAA_initial(:,:,1) * [0,0,0,1]'
 Pw = AAA_initial(:,:,1) *AAA_initial(:,:,2)  * [0,0,0,1]'
 
+start_point = 101;
+end_point = length(trajectory_points);
 
 % Final state of every joint
-Q1_69 = invKinGlobal(trajectory_points(1, 189), trajectory_points(2, 189), trajectory_points(3, 189), AAA_1_5, Lh, Lf_min, Lg, mid_arc_points,first_vertical_point,0,first_vertical_point)
+[Q1_69,previous_phi] = invKinGlobal(trajectory_points(1, start_point), trajectory_points(2, start_point), trajectory_points(3, start_point), AAA_1_5, Lh, Lf_min, Lg, mid_arc_points,first_vertical_point,0,NaN,first_vertical_point)
 
 % theta_4 = Q4; % Only affects z
 
@@ -217,13 +219,15 @@ q1 = q2;
  waitforbuttonpress
 animateRobot(H, AAA, P, h, 0.01, 0);
 
-
+%return
 
 % for i = 1:length(trajectory_points)
-for i = 190:250
+%for i = 221:1000
+for i = start_point+1:end_point
+
     % Final state of every joint
 
-    Q1_69 = invKinGlobal(trajectory_points(1, i+1), trajectory_points(2, i+1), trajectory_points(3, i+1), AAA_1_5, Lh, Lf_min, Lg, mid_arc_points,first_vertical_point,Q1_69,first_vertical_point);
+    [Q1_69,previous_phi] = invKinGlobal(trajectory_points(1, i+1), trajectory_points(2, i+1), trajectory_points(3, i+1), AAA_1_5, Lh, Lf_min, Lg, mid_arc_points,first_vertical_point,Q1_69,previous_phi,first_vertical_point);
 
 
     theta_4 = 0;
@@ -238,11 +242,11 @@ for i = 190:250
     q2 = [theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, d7, theta_8, theta_9]';
     
     
-    QQ = [q1,q2];
+    QQ  = [q1,q2];
     MDH = generateMultiDH2(DH,QQ,jTypes);
     AAA = calculateRobotMotion(MDH);
 
-    animateRobot(H, AAA, P, h, 0.01, 0)
+    animateRobot(H, AAA, P, h, 0.005, 0)
 
     q1 = q2;
 end
