@@ -44,7 +44,7 @@ setViewOptions([-1000, 10000, -5000, 5000, 0, 3000]);
 %* Points
 %* -------------------
 
-edge_points = [6472, 0, 5000]';
+edge_points = [config.tree_ofset+1722, 0, 5000]';
 first_vertical_point = edge_points;
 
 flip_flop = 1;
@@ -55,22 +55,20 @@ n = 1;
 % Generating edge points
 for i = 1:10
     radius = (((((TH / 5) * n) / TH) * TB) / 2);
-
     % x = first_vertical_point(1)-radius;
 
     x = first_vertical_point(1) - sqrt((radius + 500) ^ 2 - radius ^ 2) + 500;
     y = first_vertical_point(2) + flip_flop * radius;
     z = first_vertical_point(3) - n * (TH / 5);
 
-    flip_flop = flip_flop * (-1);
-
     if mod(i, 2) == 0
         n = n +1;
+    else
+        flip_flop = flip_flop * (-1);
     end
 
     edge_points(:, end + 1) = [x, y, z]';
 end
-
 % Generating mid points
 
 linear_generation = 1;
@@ -117,6 +115,7 @@ for i = 1:10
 
 end
 
+% h_trajectory = line(edge_points(1, :), edge_points(2, :), edge_points(3, :), 'LineWidth', 3, 'Marker', '.', 'MarkerSize', 20);
 h_trajectory = line(trajectory_points(1, :), trajectory_points(2, :), trajectory_points(3, :), 'LineWidth', 3, 'Marker', '.', 'MarkerSize', 20);
 
 % Calculating mid arc points :
@@ -167,24 +166,34 @@ DH = [theta_1, 0, La, -pi / 2;
 jTypes = [0, 0, 0, 0, 0, 0, 1, 0, 0];
 sScale = 400;
 NN = 100;
-
-AAA_initial = calculateRobotMotion(DH);
-AAA_1_5 = AAA_initial(:, :, 1) * AAA_initial(:, :, 2) * AAA_initial(:, :, 3) * AAA_initial(:, :, 4) * AAA_initial(:, :, 5);
-Pw = AAA_1_5 * [0, 0, 0, 1]';
-
-% Initial state of every joint
+% % Initial state of every joint
 q1 = [theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, d7, theta_8, theta_9]';
 
-% Final state of every joint
-
-% Q12 = invKinRR3D(Lb * cos(0) * cos(pi / 8), 0, La + Lb * sin(pi / 8), La, Lb);
-% Q4 = invKinLift(-Ld * cos(pi / 4), -Ld * sin(pi / 4) + Le, 0, Lc, Ld, Le);
-
-
-Q1_69 = invKinGlobal(trajectory_points(1, 120), trajectory_points(2, 120), trajectory_points(3, 120), AAA_1_5, Lh, Lf_min, Lg, mid_arc_points,first_vertical_point)
-
-%theta_2 = 0;
+% theta_2 = -acos(1600/1850);
+theta_2 = -acos(Ld/Lb);
 theta_3 = -theta_2;
+
+DH_updated = [theta_1, 0, La, -pi / 2;
+      -theta_2, Lb, 0, 0;
+      theta_3 - pi / 2, Lc, 0, 0;
+      theta_4 - pi / 2, Ld, 0, 0;
+      theta_5 + pi / 2, Le, 0, 0;
+      theta_6, 0, 0, -pi / 2;
+      0, 0, Lf_min + d7, pi / 2;
+      pi / 2 + theta_8, Lg, 0, pi / 2;
+      theta_9, Lh, 0, 0];
+
+AAA_initial = calculateRobotMotion(DH_updated);
+AAA_1_5 = AAA_initial(:, :, 1) * AAA_initial(:, :, 2) * AAA_initial(:, :, 3) * AAA_initial(:, :, 4) * AAA_initial(:, :, 5)* AAA_initial(:, :, 6);
+Pw = AAA_1_5 * [0, 0, 0, 1]';
+
+Pw = AAA_initial(:,:,1) * [0,0,0,1]'
+Pw = AAA_initial(:,:,1) *AAA_initial(:,:,2)  * [0,0,0,1]'
+
+
+% Final state of every joint
+Q1_69 = invKinGlobal(trajectory_points(1, 189), trajectory_points(2, 189), trajectory_points(3, 189), AAA_1_5, Lh, Lf_min, Lg, mid_arc_points,first_vertical_point,0,first_vertical_point)
+
 % theta_4 = Q4; % Only affects z
 
 theta_4 = 0;
@@ -197,11 +206,45 @@ theta_8 = Q1_69(4);
 theta_9 = Q1_69(5);
 
 q2 = [theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, d7, theta_8, theta_9]';
+% q2 = [0, -acos(1600/1850), acos(1600/1850), 0, 0, 0, 0, 0, 0]';
 
-QQ = [q1, q2];
+QQ = [q1,q2];
+
+q1 = q2;
+
 
 [H, h, P, AAA] = initRobot(QQ, NN, DH, jTypes, sScale);
+ waitforbuttonpress
+animateRobot(H, AAA, P, h, 0.01, 0);
 
-waitforbuttonpress
 
-animateRobot(H, AAA, P, h, 0.01, 0)
+
+% for i = 1:length(trajectory_points)
+for i = 190:250
+    % Final state of every joint
+
+    Q1_69 = invKinGlobal(trajectory_points(1, i+1), trajectory_points(2, i+1), trajectory_points(3, i+1), AAA_1_5, Lh, Lf_min, Lg, mid_arc_points,first_vertical_point,Q1_69,first_vertical_point);
+
+
+    theta_4 = 0;
+    theta_5 = -theta_4;
+
+    theta_1 = Q1_69(1);
+    theta_6 = Q1_69(2);
+    d7      = Q1_69(3);
+    theta_8 = Q1_69(4);
+    theta_9 = Q1_69(5);
+
+    q2 = [theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, d7, theta_8, theta_9]';
+    
+    
+    QQ = [q1,q2];
+    MDH = generateMultiDH2(DH,QQ,jTypes);
+    AAA = calculateRobotMotion(MDH);
+
+    animateRobot(H, AAA, P, h, 0.01, 0)
+
+    q1 = q2;
+end
+
+

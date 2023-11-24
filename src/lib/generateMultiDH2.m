@@ -8,6 +8,7 @@ end
 
 %Definir MDH como repetições de DH
 MDH = repmat(DH, [1 1 size(MQ,2)]);
+% MDH = zeros(size(DH, 1), 4, size(MQ, 2));
 
 for n = 1:size(MQ,2)
     for j=1:size(DH,1)

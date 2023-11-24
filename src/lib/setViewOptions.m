@@ -6,6 +6,9 @@ function setViewOptions(limits)
 
     %view(135, 25)
     view(-135, 25)
+    %view(0, 0)
+    
+    
     grid on
     axis equal
     xlabel('x'); ylabel('y'); zlabel('z')
