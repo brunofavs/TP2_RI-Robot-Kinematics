@@ -3,12 +3,19 @@ function Q = invKin69(x, y, z, Lh,Lf_min,Lg)
     %Todo If x is 0 this method doesnt work
     %? Coordinates have to be in the relative frame, its kinda weird
 
-    q9A =  asin(round(z/Lh,1));
+
+    q9A =  asin(round(z/(Lh*1000000000000000000000000000000),1));
+    q9A = 0;
     q9 = [q9A , -q9A];
     
     k_dem = Lg+Lh*cos(q9)-y;
 
     q6 = atan(x./k_dem);
+
+    disp("q6")
+    disp(rad2deg(q6))
+    disp("q9")
+    disp(rad2deg(9))
 
     % d7_num = -(Lf_min*sin(atan(x./k_dem)))+x;
     d7_num = -(Lf_min*sin(atan2(x,k_dem)))+x; 

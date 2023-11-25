@@ -5,7 +5,7 @@ function setViewOptions(limits)
     fontname("Fira Code SemiBold")
 
     %view(135, 25)
-    view(-135, 25)
+    view(-155, 25)
     %view(0, 0)
     
     

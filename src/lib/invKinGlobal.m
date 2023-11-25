@@ -22,11 +22,14 @@ function [Q1_69, phi] = invKinGlobal(x, y, z, AAA_1_5, Lh, Lf_min, Lg, mid_arc_p
 
     % end
 
+    % d7 = Q69(2, 1);
+    % theta_9 = Q69(4, 1);
     Q69 = invKin69(P6(3), P6(1), P6(2), Lh, Lf_min, Lg);
     theta_6 = Q69(1, 1);
-    d7 = Q69(2, 1);
     theta_8 = Q69(3, 1);
-    theta_9 = Q69(4, 1);
+
+    % theta_6 = -0.3;
+    % theta_8 = -theta_6;
 
     % Compute tool angle
 

@@ -169,7 +169,6 @@ NN = 100;
 % % Initial state of every joint
 q1 = [theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, d7, theta_8, theta_9]';
 
-% theta_2 = -acos(1600/1850);
 theta_2 = -acos(Ld/Lb);
 theta_3 = -theta_2;
 
@@ -190,7 +189,8 @@ Pw = AAA_1_5 * [0, 0, 0, 1]';
 Pw = AAA_initial(:,:,1) * [0,0,0,1]'
 Pw = AAA_initial(:,:,1) *AAA_initial(:,:,2)  * [0,0,0,1]'
 
-start_point = 101;
+% start_point = 101;
+start_point = 1;
 end_point = length(trajectory_points);
 
 % Final state of every joint
@@ -223,7 +223,7 @@ animateRobot(H, AAA, P, h, 0.01, 0);
 
 % for i = 1:length(trajectory_points)
 %for i = 221:1000
-for i = start_point+1:end_point
+for i = start_point+1:end_point-1
 
     % Final state of every joint
 
