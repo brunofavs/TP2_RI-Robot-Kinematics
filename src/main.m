@@ -246,7 +246,7 @@ for i = start_point+1:end_point
     MDH = generateMultiDH2(DH,QQ,jTypes);
     AAA = calculateRobotMotion(MDH);
 
-    animateRobot(H, AAA, P, h, 0.005, 0)
+    animateRobot(H, AAA, P, h, 0.0005, 0)
 
     q1 = q2;
 end

@@ -6,15 +6,11 @@ function Q = invKin69(x, y, z, Lh,Lf_min,Lg)
     q9A =  asin(round(z/Lh,1));
     q9 = [q9A , -q9A];
     
-    
     k_dem = Lg+Lh*cos(q9)-y;
 
     q6 = atan(x./k_dem);
-    
 
-    % q6 = atan(x./k_dem);
-
-   %  d7_num = -(Lf_min*sin(atan(x./k_dem)))+x;
+    % d7_num = -(Lf_min*sin(atan(x./k_dem)))+x;
     d7_num = -(Lf_min*sin(atan2(x,k_dem)))+x; 
 
     % d7_dem = sin(atan(x./k_dem));
