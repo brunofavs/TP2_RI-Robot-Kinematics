@@ -7,7 +7,7 @@ addpath("./lib")
 addpath(getenv("RI_LIB"))
 
 % config.tree_ofset = 4750;
-config.tree_ofset = 4750 - 500;
+config.tree_ofset = 4750 + 100;
 
 %* -------------------
 %* Tree Initialization
@@ -185,14 +185,11 @@ NN = 100;
 % % Initial state of every joint
 q1 = [theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, d7, theta_8, theta_9]';
 
-
-
 start_point = 101;
 end_point = length(trajectory_points);
 
 % Final state of every joint after first move
-[Q19, previous_phi] = invKinGlobal(trajectory_points(1, start_point), trajectory_points(2, start_point), trajectory_points(3, start_point), dimensions, mid_arc_points, first_vertical_point, 0, NaN, first_vertical_point);
-
+[Q19, previous_phi, ~] = invKinGlobal(trajectory_points(1, start_point), trajectory_points(2, start_point), trajectory_points(3, start_point), dimensions, mid_arc_points, first_vertical_point, 0, NaN, first_vertical_point);
 
 theta_1 = Q19(1);
 
@@ -222,9 +219,10 @@ animateRobot(H, AAA, P, h, 0.01, 0);
 
 % return
 
+
 for i = start_point + 1:end_point - 1
 
-    [Q19, previous_phi] = invKinGlobal(trajectory_points(1, i + 1), trajectory_points(2, i + 1), trajectory_points(3, i + 1), dimensions, mid_arc_points, first_vertical_point, Q19, previous_phi, first_vertical_point);
+    [Q19, previous_phi, needs_transition] = invKinGlobal(trajectory_points(1, i + 1), trajectory_points(2, i + 1), trajectory_points(3, i + 1), dimensions, mid_arc_points, first_vertical_point, Q19, previous_phi, first_vertical_point);
 
     theta_1 = Q19(1);
 
@@ -241,8 +239,9 @@ for i = start_point + 1:end_point - 1
     q2 = [theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, d7, theta_8, theta_9]';
 
     QQ = [q1, q2];
+
     MDH = generateMultiDH2(DH, QQ, jTypes);
-    AAA = calculateRobotMotion(MDH)
+    AAA = calculateRobotMotion(MDH);
 
     animateRobot(H, AAA, P, h, 0.01, 0)
 

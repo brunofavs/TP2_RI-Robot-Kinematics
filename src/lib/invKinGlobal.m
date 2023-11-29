@@ -1,6 +1,8 @@
-function [Q19, phi] = invKinGlobal(x, y, z, dimensions, mid_arc_points, P0, previous_Q1_69, previous_phi, first_vertical_point)
+function [Q19, phi, needs_transition] = invKinGlobal(x, y, z, dimensions, mid_arc_points, P0, previous_Q1_69, previous_phi, first_vertical_point)
 
     addpath("./lib")
+
+    needs_transition = 0;
 
     La = dimensions.La;
     Lb = dimensions.Lb;
@@ -73,24 +75,30 @@ function [Q19, phi] = invKinGlobal(x, y, z, dimensions, mid_arc_points, P0, prev
 
     % Pd is a RR3d if its vertically aligned
 
-    L1_rr3d = joint6_point_abs(3)
-    L2_rr3d = Lf_min+d7
+    L1_rr3d = joint6_point_abs(3);
+    L2_rr3d = Lf_min + d7;
 
-    Pd =[L2_rr3d * cos(-theta_1)*cos(theta_6)...
-        ,L2_rr3d*sin(theta_1)*cos(theta_6)...
-        ,L1_rr3d + L2_rr3d*sin(-theta_6)]'
+    Pd = [L2_rr3d * cos(-theta_1) * cos(theta_6) ...
+             , L2_rr3d * sin(theta_1) * cos(theta_6) ...
+             , L1_rr3d + L2_rr3d * sin(-theta_6)]';
 
     u = Pd - joint6_point_abs(1:3);
     u = u / norm(u);
 
-    P_final_lift = joint6_point_abs(1:3) + (Lf_min*1.4) * u
+    inputMin = 0;
+    inputMax = 6000;
+    outputMax = 1.3;
+    outputMin = 0.5;
+
+    adjustment = (z - inputMin) / (inputMax - inputMin) * (outputMax - outputMin) + outputMin
+    P_final_lift = joint6_point_abs(1:3) + (Lf_min * (adjustment)) * u;
 
     %  What to input to the lift
 
     % Q25 = invKinLift(3000,-2000,0,La,Lb, Lc, Ld)
-    Q25 = invKinLift(P_final_lift(1), -P_final_lift(3)+300, 0, La, Lb, Lc, Ld);
+    Q25 = invKinLift(P_final_lift(1), -P_final_lift(3) + 300, 0, La, Lb, Lc, Ld);
 
-    Q19(7) = d7 - Lf_min*1.4;
+    Q19(7) = d7 - Lf_min * (adjustment);
 
     theta_2 = Q25(1);
     theta_3 = Q25(2);
