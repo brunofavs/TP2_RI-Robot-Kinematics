@@ -1,8 +1,21 @@
-function [Q1_69, phi] = invKinGlobal(x, y, z, AAA_1_5, Lh, Lf_min, Lg, mid_arc_points, P0, previous_Q1_69, previous_phi, first_vertical_point)
+function [Q19, phi] = invKinGlobal(x, y, z, dimensions, mid_arc_points, P0, previous_Q1_69, previous_phi, first_vertical_point)
+
     addpath("./lib")
 
-    % P6 = [x, y, z, 1]' -AAA_1_5 * [0, 0, 0, 1]';
-    P6 = [x, y, z, 1]' - [0, 0, 2568.71, 1]';
+    La = dimensions.La;
+    Lb = dimensions.Lb;
+    Lc = dimensions.Lc;
+    Ld = dimensions.Ld;
+    Le = dimensions.Le;
+    Lf_min = dimensions.Lf_min;
+    Lf_max = dimensions.Lf_max;
+    dLf_max = dimensions.dLf_max;
+    d7 = dimensions.d7;
+    Lg = dimensions.Lg;
+    Lh = dimensions.Lh;
+
+    joint6_point_abs = [0, 0, 2568.71, 1]'
+    P6 = [x, y, z, 1]' - joint6_point_abs;
 
     if abs(P6(3)) < 0.0001
         P6(3) = 0.0001;
@@ -10,32 +23,13 @@ function [Q1_69, phi] = invKinGlobal(x, y, z, AAA_1_5, Lh, Lf_min, Lg, mid_arc_p
 
     % Compute tool angle
 
-    % 1 - Find which arc_point corresponds to the heigth of the trajectory point in question
-
-    % arc_point = [];
-
-    % for i = 1:length(mid_arc_points)
-
-    %     if z == mid_arc_points(3, i)
-    %         arc_point = mid_arc_points(:, i);
-    %     end
-
-    % end
-
-    % d7 = Q69(2, 1);
-    % theta_9 = Q69(4, 1);
     Q69 = invKin69(P6(3), P6(1), P6(2), Lh, Lf_min, Lg);
     theta_6 = Q69(1, 1);
     theta_8 = Q69(3, 1);
-
-    % theta_6 = -0.3;
-    % theta_8 = -theta_6;
-
-    % Compute tool angle
+    Q19(6) = theta_6;
 
     P0_adjusted = [P0(1); P0(2); z];
     Pf = [x; y; z];
-
 
     TH = 4000;
     TB = 3400;
@@ -46,8 +40,6 @@ function [Q1_69, phi] = invKinGlobal(x, y, z, AAA_1_5, Lh, Lf_min, Lg, mid_arc_p
     vector1 = [-339.99, 3.535, -800]';
     vector2 = Pf - P0;
 
-    % phi = atan2(norm(cross(vector1,vector2)),dot(vector1,vector2));
-
     %!!! Need to round because was giving very small complex numbers when it was close to 1
     phi = acos(round(dot(vector1, vector2) / (norm(vector1) * norm(vector2)), 3));
     cross_vect = cross(vector1, vector2);
@@ -55,6 +47,7 @@ function [Q1_69, phi] = invKinGlobal(x, y, z, AAA_1_5, Lh, Lf_min, Lg, mid_arc_p
     if cross_vect(3) > 0
         phi = -phi;
     end
+
     % end
 
     % Compute 2 new angles theta_1 and theta_9
@@ -73,11 +66,44 @@ function [Q1_69, phi] = invKinGlobal(x, y, z, AAA_1_5, Lh, Lf_min, Lg, mid_arc_p
 
     d7 = (L_angled - Lf_min * cos(abs(theta_6)) - Lg) / cos(abs(theta_6));
 
+    Q19(1) = theta_1;
+    Q19(7) = d7;
+    Q19(8) = theta_8;
+    Q19(9) = theta_9;
 
-    Q1_69(1) = theta_1;
-    Q1_69(2) = theta_6;
-    Q1_69(3) = d7;
-    Q1_69(4) = theta_8;
-    Q1_69(5) = theta_9;
+    % Pd is a RR3d if its vertically aligned
 
+    L1_rr3d = joint6_point_abs(3)
+    L2_rr3d = Lf_min+d7
+
+    Pd =[L2_rr3d * cos(-theta_1)*cos(theta_6)...
+        ,L2_rr3d*sin(theta_1)*cos(theta_6)...
+        ,L1_rr3d + L2_rr3d*sin(-theta_6)]'
+
+    u = Pd - joint6_point_abs(1:3);
+    u = u / norm(u);
+
+    P_final_lift = joint6_point_abs(1:3) + (Lf_min*1.4) * u
+
+    %  What to input to the lift
+
+    % Q25 = invKinLift(3000,-2000,0,La,Lb, Lc, Ld)
+    Q25 = invKinLift(P_final_lift(1), -P_final_lift(3)+300, 0, La, Lb, Lc, Ld);
+
+    Q19(7) = d7 - Lf_min*1.4;
+
+    theta_2 = Q25(1);
+    theta_3 = Q25(2);
+    theta_4 = Q25(3);
+    theta_5 = Q25(4);
+
+    % theta_2 = 0;
+    % theta_3 = 0;
+    % theta_4 = 0;
+    % theta_5 = 0;
+
+    Q19(2) = theta_2;
+    Q19(3) = theta_3;
+    Q19(4) = theta_4;
+    Q19(5) = theta_5;
 end

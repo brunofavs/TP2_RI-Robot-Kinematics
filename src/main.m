@@ -6,7 +6,8 @@ addpath("../files");
 addpath("./lib")
 addpath(getenv("RI_LIB"))
 
-config.tree_ofset = 4750;
+% config.tree_ofset = 4750;
+config.tree_ofset = 4750 - 500;
 
 %* -------------------
 %* Tree Initialization
@@ -44,7 +45,7 @@ setViewOptions([-1000, 10000, -5000, 5000, 0, 3000]);
 %* Points
 %* -------------------
 
-edge_points = [config.tree_ofset+1722, 0, 5000]';
+edge_points = [config.tree_ofset + 1722, 0, 5000]';
 first_vertical_point = edge_points;
 
 flip_flop = 1;
@@ -69,6 +70,7 @@ for i = 1:10
 
     edge_points(:, end + 1) = [x, y, z]';
 end
+
 % Generating mid points
 
 linear_generation = 1;
@@ -152,6 +154,20 @@ d7 = 0;
 Lg = 970;
 Lh = 1150;
 
+% I would just refactor but matlab doesn't even have a good refactoring :C
+
+dimensions.La = 940;
+dimensions.Lb = 1850;
+dimensions.Lc = 400;
+dimensions.Ld = 1600;
+dimensions.Le = 300;
+dimensions.Lf_min = 1800;
+dimensions.Lf_max = 3000;
+dimensions.dLf_max = Lf_max - Lf_min;
+dimensions.d7 = 0;
+dimensions.Lg = 970;
+dimensions.Lh = 1150;
+
 DH = [theta_1, 0, La, -pi / 2;
       -theta_2, Lb, 0, 0;
       theta_3 - pi / 2, Lc, 0, 0;
@@ -169,86 +185,66 @@ NN = 100;
 % % Initial state of every joint
 q1 = [theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, d7, theta_8, theta_9]';
 
-theta_2 = -acos(Ld/Lb);
-theta_3 = -theta_2;
 
-DH_updated = [theta_1, 0, La, -pi / 2;
-      -theta_2, Lb, 0, 0;
-      theta_3 - pi / 2, Lc, 0, 0;
-      theta_4 - pi / 2, Ld, 0, 0;
-      theta_5 + pi / 2, Le, 0, 0;
-      theta_6, 0, 0, -pi / 2;
-      0, 0, Lf_min + d7, pi / 2;
-      pi / 2 + theta_8, Lg, 0, pi / 2;
-      theta_9, Lh, 0, 0];
 
-AAA_initial = calculateRobotMotion(DH_updated);
-AAA_1_5 = AAA_initial(:, :, 1) * AAA_initial(:, :, 2) * AAA_initial(:, :, 3) * AAA_initial(:, :, 4) * AAA_initial(:, :, 5)* AAA_initial(:, :, 6);
-Pw = AAA_1_5 * [0, 0, 0, 1]';
-
-Pw = AAA_initial(:,:,1) * [0,0,0,1]'
-Pw = AAA_initial(:,:,1) *AAA_initial(:,:,2)  * [0,0,0,1]'
-
-% start_point = 101;
-start_point = 1;
+start_point = 101;
 end_point = length(trajectory_points);
 
-% Final state of every joint
-[Q1_69,previous_phi] = invKinGlobal(trajectory_points(1, start_point), trajectory_points(2, start_point), trajectory_points(3, start_point), AAA_1_5, Lh, Lf_min, Lg, mid_arc_points,first_vertical_point,0,NaN,first_vertical_point)
+% Final state of every joint after first move
+[Q19, previous_phi] = invKinGlobal(trajectory_points(1, start_point), trajectory_points(2, start_point), trajectory_points(3, start_point), dimensions, mid_arc_points, first_vertical_point, 0, NaN, first_vertical_point);
 
-% theta_4 = Q4; % Only affects z
 
-theta_4 = 0;
-theta_5 = -theta_4;
+theta_1 = Q19(1);
 
-theta_1 = Q1_69(1);
-theta_6 = Q1_69(2);
-d7      = Q1_69(3);
-theta_8 = Q1_69(4);
-theta_9 = Q1_69(5);
+theta_2 = Q19(2);
+theta_3 = Q19(3);
+theta_4 = Q19(4);
+theta_5 = Q19(5);
+
+theta_6 = Q19(6);
+d7 = Q19(7)
+theta_8 = Q19(8);
+theta_9 = Q19(9);
+
+% To get it fixed at the vertical aligned heigth
+% theta_2 = -acos(Ld / Lb);
+% theta_3 = -theta_2;
 
 q2 = [theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, d7, theta_8, theta_9]';
-% q2 = [0, -acos(1600/1850), acos(1600/1850), 0, 0, 0, 0, 0, 0]';
 
-QQ = [q1,q2];
+QQ = [q1, q2];
 
 q1 = q2;
 
-
 [H, h, P, AAA] = initRobot(QQ, NN, DH, jTypes, sScale);
- waitforbuttonpress
+waitforbuttonpress
 animateRobot(H, AAA, P, h, 0.01, 0);
 
-%return
+% return
 
-% for i = 1:length(trajectory_points)
-%for i = 221:1000
-for i = start_point+1:end_point-1
+for i = start_point + 1:end_point - 1
 
-    % Final state of every joint
+    [Q19, previous_phi] = invKinGlobal(trajectory_points(1, i + 1), trajectory_points(2, i + 1), trajectory_points(3, i + 1), dimensions, mid_arc_points, first_vertical_point, Q19, previous_phi, first_vertical_point);
 
-    [Q1_69,previous_phi] = invKinGlobal(trajectory_points(1, i+1), trajectory_points(2, i+1), trajectory_points(3, i+1), AAA_1_5, Lh, Lf_min, Lg, mid_arc_points,first_vertical_point,Q1_69,previous_phi,first_vertical_point);
+    theta_1 = Q19(1);
 
+    theta_2 = Q19(2);
+    theta_3 = Q19(3);
+    theta_4 = Q19(4);
+    theta_5 = Q19(5);
 
-    theta_4 = 0;
-    theta_5 = -theta_4;
-
-    theta_1 = Q1_69(1);
-    theta_6 = Q1_69(2);
-    d7      = Q1_69(3);
-    theta_8 = Q1_69(4);
-    theta_9 = Q1_69(5);
+    theta_6 = Q19(6);
+    d7 = Q19(7)
+    theta_8 = Q19(8);
+    theta_9 = Q19(9);
 
     q2 = [theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, d7, theta_8, theta_9]';
-    
-    
-    QQ  = [q1,q2];
-    MDH = generateMultiDH2(DH,QQ,jTypes);
-    AAA = calculateRobotMotion(MDH);
 
-    animateRobot(H, AAA, P, h, 0.0005, 0)
+    QQ = [q1, q2];
+    MDH = generateMultiDH2(DH, QQ, jTypes);
+    AAA = calculateRobotMotion(MDH)
+
+    animateRobot(H, AAA, P, h, 0.01, 0)
 
     q1 = q2;
 end
-
-

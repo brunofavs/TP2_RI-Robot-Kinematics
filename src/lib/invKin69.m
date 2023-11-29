@@ -12,10 +12,10 @@ function Q = invKin69(x, y, z, Lh,Lf_min,Lg)
 
     q6 = atan(x./k_dem);
 
-    disp("q6")
-    disp(rad2deg(q6))
-    disp("q9")
-    disp(rad2deg(9))
+    % disp("q6")
+    % disp(rad2deg(q6))
+    % disp("q9")
+    % disp(rad2deg(9))
 
     % d7_num = -(Lf_min*sin(atan(x./k_dem)))+x;
     d7_num = -(Lf_min*sin(atan2(x,k_dem)))+x; 
