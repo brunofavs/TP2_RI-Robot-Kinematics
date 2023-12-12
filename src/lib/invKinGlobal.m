@@ -16,7 +16,7 @@ function [Q19, phi, needs_transition] = invKinGlobal(x, y, z, dimensions, mid_ar
     Lg = dimensions.Lg;
     Lh = dimensions.Lh;
 
-    joint6_point_abs = [0, 0, 2568.71, 1]'
+    joint6_point_abs = [0, 0, 2568.71, 1]';
     P6 = [x, y, z, 1]' - joint6_point_abs;
 
     if abs(P6(3)) < 0.0001
@@ -39,6 +39,7 @@ function [Q19, phi, needs_transition] = invKinGlobal(x, y, z, dimensions, mid_ar
     heigth = (first_vertical_point(3) - z);
     radius = (heigth / TH * TB) / 2;
 
+    %? Where tf did this came from ?
     vector1 = [-339.99, 3.535, -800]';
     vector2 = Pf - P0;
 
@@ -90,7 +91,7 @@ function [Q19, phi, needs_transition] = invKinGlobal(x, y, z, dimensions, mid_ar
     outputMax = 1.3;
     outputMin = 0.5;
 
-    adjustment = (z - inputMin) / (inputMax - inputMin) * (outputMax - outputMin) + outputMin
+    adjustment = (z - inputMin) / (inputMax - inputMin) * (outputMax - outputMin) + outputMin;
     P_final_lift = joint6_point_abs(1:3) + (Lf_min * (adjustment)) * u;
 
     %  What to input to the lift

@@ -6,11 +6,12 @@ addpath("../files");
 addpath("./lib")
 addpath(getenv("RI_LIB"))
 
+% config.tree_ofset = 4750;
+config.tree_ofset = 4750 + 100;
+
 %* -------------------
 %* Tree Initialization
 %* -------------------
-% config.tree_ofset = 4750;
-config.tree_ofset = 4750 + 100;
 
 % Import the VRML file (or the appropriate file format)
 [F_log, V_log] = stlread("../models/Whole_Tree - Log-1.STL");
@@ -40,9 +41,9 @@ tree.handlers.aux_cone.Vertices = V_aux_cone_homogenous(1:3, :)';
 % setViewOptionsDefault();
 setViewOptions([-1000, 10000, -5000, 5000, 0, 3000]);
 
-%* ---------------------------
-%* Computing trajectory points
-%* ---------------------------
+%* -------------------
+%* Points
+%* -------------------
 
 edge_points = [config.tree_ofset + 1722, 0, 5000]';
 first_vertical_point = edge_points;
@@ -52,7 +53,7 @@ TH = 4000;
 TB = 3400;
 n = 1;
 
-%* Generating edge points
+% Generating edge points
 for i = 1:10
     radius = (((((TH / 5) * n) / TH) * TB) / 2);
     % x = first_vertical_point(1)-radius;
@@ -70,7 +71,7 @@ for i = 1:10
     edge_points(:, end + 1) = [x, y, z]';
 end
 
-% *Generating mid points
+% Generating mid points
 
 linear_generation = 1;
 
@@ -116,12 +117,10 @@ for i = 1:10
 
 end
 
-
-%* Drawing line
 % h_trajectory = line(edge_points(1, :), edge_points(2, :), edge_points(3, :), 'LineWidth', 3, 'Marker', '.', 'MarkerSize', 20);
 h_trajectory = line(trajectory_points(1, :), trajectory_points(2, :), trajectory_points(3, :), 'LineWidth', 3, 'Marker', '.', 'MarkerSize', 20);
 
-%* Calculating mid arc points :
+% Calculating mid arc points :
 
 mid_arc_points = [];
 
@@ -129,56 +128,9 @@ for i = 1:2:9
     mid_arc_points = [mid_arc_points, [trajectory_points(1, i * 100 + 51), trajectory_points(2, i * 100 + 51), trajectory_points(3, i * 100 + 51)]'];
 end
 
-%* ------------------------
-%* Loading robot parameters
-%* ------------------------
-try
-    tfid = fopen('tp2.txt');
-    tdata = textscan(tfid, ' %s= %s');
-    fclose(tfid);
-
-    if (numel(tdata{1}) ~= numel(tdata{2}))
-        disp('Error reading file. Missing = !')
-        clear tdata tfid
-    else
-        ndata = {tdata{1} repmat(' = ', size(tdata{1})) tdata{2}};
-        sdata = strcat(ndata{1}, ndata{2}, ndata{3});
-
-        for i = 1:numel(sdata)
-
-            try
-                eval(sdata{i});
-            catch
-                sprintf('Bad format in line %d of data file!',i)
-            end
-
-        end
-
-        Lf_min = Lf;
-        Lf_max = Lf_min *1.7;
-        dLf_max = Lf_max - Lf_min;
-        d7 = 0;
-
-        clear i tfid ndata tdata sdata
-    end
-
-catch
-    disp('Cannot open file.')
-    disp('Loading default parameters')
-
-    La = 940;
-    Lb = 1850;
-    Lc = 400;
-    Ld = 1600;
-    Le = 300;
-    Lf_min = 1800;
-    Lf_max = 3000;
-    dLf_max = Lf_max - Lf_min;
-    d7 = 0;
-    Lg = 970;
-    Lh = 1150;
-
-end
+%* -------------------
+%* Robot Initialization
+%* -------------------
 
 theta_1 = 0;
 theta_2 = 0;
@@ -190,23 +142,31 @@ theta_7 = 0;
 theta_8 = 0;
 theta_9 = 0;
 
+La = 940;
+Lb = 1850;
+Lc = 400;
+Ld = 1600;
+Le = 300;
+Lf_min = 1800;
+Lf_max = 3000;
+dLf_max = Lf_max - Lf_min;
+d7 = 0;
+Lg = 970;
+Lh = 1150;
+
 % I would just refactor but matlab doesn't even have a good refactoring :C
 
-dimensions.La = La;
-dimensions.Lb = Lb;
-dimensions.Lc = Lc;
-dimensions.Ld = Ld;
-dimensions.Le = Le;
-dimensions.Lf_min = Lf_min;
-dimensions.Lf_max = Lf_min*1.7;
+dimensions.La = 940;
+dimensions.Lb = 1850;
+dimensions.Lc = 400;
+dimensions.Ld = 1600;
+dimensions.Le = 300;
+dimensions.Lf_min = 1800;
+dimensions.Lf_max = 3000;
 dimensions.dLf_max = Lf_max - Lf_min;
 dimensions.d7 = 0;
 dimensions.Lg = 970;
 dimensions.Lh = 1150;
-
-%* --------------------
-%* Drawing robot joints
-%* --------------------
 
 % [F_jointA, V_jointA] = stlread("../models/EloA_Y.STL");
 % [F_jointB, V_jointB] = stlread("../models/EloB_-X.STL");
@@ -218,6 +178,7 @@ dimensions.Lh = 1150;
 % [F_jointFvar, V_jointFvar] = stlread("../models/EloF_var_-Y.STL");
 % [F_jointG, V_jointG] = stlread("../models/EloG_-X.STL");
 % % [F_jointH, V_jointH] = stlread("../models/EloH_-X.STL");
+
 
 % robot.handlers.jointA = patch('Vertices', V_jointA, 'Faces', F_jointA, 'FaceColor', '#1f0aff', 'EdgeAlpha', 0.1);
 % robot.handlers.jointB = patch('Vertices', V_jointB, 'Faces', F_jointB, 'FaceColor', '#d91c1c', 'EdgeAlpha', 0.1);
@@ -241,9 +202,10 @@ dimensions.Lh = 1150;
 
 robot.aa = 0
 
-%* ---------------------------------
-%* Declaring DH matrix
-%* ---------------------------------
+
+
+
+
 
 DH = [theta_1, 0, La, -pi / 2;
       -theta_2, Lb, 0, 0;
@@ -255,10 +217,7 @@ DH = [theta_1, 0, La, -pi / 2;
       pi / 2 + theta_8, Lg, 0, pi / 2;
       theta_9, Lh, 0, 0];
 
-%* ---------------------------------
-%* Inverse Kinematics Initialization
-%* ---------------------------------
-
+% R,R
 jTypes = [0, 0, 0, 0, 0, 0, 1, 0, 0];
 sScale = 400;
 NN = 100;
@@ -296,11 +255,8 @@ q1 = q2;
 [H, h, P, AAA] = initRobot(QQ, NN, DH, jTypes, sScale);
 
 waitforbuttonpress
-animateRobot(H, AAA, P, h, 0.05, 0, robot);
+animateRobot(H, AAA, P, h, 0.05, 0,robot);
 
-%* -------------------------------
-%* Inverse Kinematics
-%* -------------------------------
 
 d7s = [];
 
@@ -329,21 +285,18 @@ for i = start_point + 1:end_point - 1
     MDH = generateMultiDH2(DH, QQ, jTypes);
     AAA = calculateRobotMotion(MDH);
 
-    animateRobot(H, AAA, P, h, 0.01, 0, robot)
+    animateRobot(H, AAA, P, h, 0.01, 0,robot)
 
     q1 = q2;
 end
 
-%* -------------------------------
-%* Plotting Prismatic Joint Values
-%* -------------------------------
 plot(d7s)
 
-hold on
+hold on 
 
-d7_limits = 0.7 * dimensions.Lf_min * ones(size(d7s));
+d7_limits = 1.7* dimensions.Lf_minh * ones(size(d7s))
 
-plot(d7_limits, '-.')
+plot(d7_limits,'-.')
 
 title('Prismatic Joint Extension')
 xlabel('Time')
