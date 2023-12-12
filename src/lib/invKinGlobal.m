@@ -1,8 +1,7 @@
-function [Q19, phi, needs_transition] = invKinGlobal(x, y, z, dimensions, mid_arc_points, P0, previous_Q1_69, previous_phi, first_vertical_point)
+function [Q19] = invKinGlobal(x, y, z,phi, dimensions, first_vertical_point)
 
     addpath("./lib")
 
-    needs_transition = 0;
 
     La = dimensions.La;
     Lb = dimensions.Lb;
@@ -30,26 +29,25 @@ function [Q19, phi, needs_transition] = invKinGlobal(x, y, z, dimensions, mid_ar
     theta_8 = Q69(3, 1);
     Q19(6) = theta_6;
 
-    P0_adjusted = [P0(1); P0(2); z];
-    Pf = [x; y; z];
-
+    
     TH = 4000;
     TB = 3400;
-
+    
     heigth = (first_vertical_point(3) - z);
     radius = (heigth / TH * TB) / 2;
-
+    
+    Pf = [x; y; z];
     %? Where tf did this came from ?
     vector1 = [-339.99, 3.535, -800]';
-    vector2 = Pf - P0;
+    vector2 = Pf - first_vertical_point;
 
     %!!! Need to round because was giving very small complex numbers when it was close to 1
-    phi = acos(round(dot(vector1, vector2) / (norm(vector1) * norm(vector2)), 3));
-    cross_vect = cross(vector1, vector2);
+    % phi = acos(round(dot(vector1, vector2) / (norm(vector1) * norm(vector2)), 3));
+    % cross_vect = cross(vector1, vector2);
 
-    if cross_vect(3) > 0
-        phi = -phi;
-    end
+    % if cross_vect(3) > 0
+    %     phi = -phi;
+    % end
 
     % end
 

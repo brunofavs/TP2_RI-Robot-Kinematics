@@ -129,6 +129,37 @@ for i = 1:2:9
     mid_arc_points = [mid_arc_points, [trajectory_points(1, i * 100 + 51), trajectory_points(2, i * 100 + 51), trajectory_points(3, i * 100 + 51)]'];
 end
 
+%* Computing phi from coordinates
+
+trajectory_points_w_phi = [];
+    
+for i = 1:length(trajectory_points)
+
+    x = trajectory_points(1,i);
+    y = trajectory_points(2,i);
+    z = trajectory_points(3,i);
+
+    Pf = [x; y; z];
+    %? Where tf did this came from ?
+    vector1 = [-339.99, 3.535, -800]';
+    vector2 = Pf - first_vertical_point;
+
+    %!!! Need to round because was giving very small complex numbers when it was close to 1
+    phi = acos(round(dot(vector1, vector2) / (norm(vector1) * norm(vector2)), 3));
+    cross_vect = cross(vector1, vector2);
+
+    if cross_vect(3) > 0
+        phi = -phi;
+    end
+
+    trajectory_points_w_phi(1:3,i) = [x,y,z]';
+    trajectory_points_w_phi(4:5,i) = 0;
+    trajectory_points_w_phi(6,i) = phi;
+
+end
+
+
+
 %* ------------------------
 %* Loading robot parameters
 %* ------------------------
@@ -269,7 +300,7 @@ start_point = 101;
 end_point = length(trajectory_points);
 
 % Final state of every joint after first move
-[Q19, previous_phi, ~] = invKinGlobal(trajectory_points(1, start_point), trajectory_points(2, start_point), trajectory_points(3, start_point), dimensions, mid_arc_points, first_vertical_point, 0, NaN, first_vertical_point);
+Q19 = invKinGlobal(trajectory_points_w_phi(1, start_point), trajectory_points_w_phi(2, start_point), trajectory_points_w_phi(3, start_point),trajectory_points_w_phi(6, start_point), dimensions, first_vertical_point);
 
 theta_1 = Q19(1);
 
@@ -306,7 +337,7 @@ d7s = [];
 
 for i = start_point + 1:end_point - 1
 
-    [Q19, previous_phi, needs_transition] = invKinGlobal(trajectory_points(1, i + 1), trajectory_points(2, i + 1), trajectory_points(3, i + 1), dimensions, mid_arc_points, first_vertical_point, Q19, previous_phi, first_vertical_point);
+    Q19 = invKinGlobal(trajectory_points_w_phi(1, i + 1), trajectory_points_w_phi(2, i + 1), trajectory_points_w_phi(3, i + 1),trajectory_points_w_phi(6, i + 1), dimensions, first_vertical_point); 
 
     theta_1 = Q19(1);
 
