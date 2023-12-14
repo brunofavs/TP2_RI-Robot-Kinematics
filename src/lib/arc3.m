@@ -1,5 +1,5 @@
 % function [r, p, al3, X, Y] = arc3(p1, p2, p3)
-function arc_points = arc3(p1, p2, p3)
+function arc_points = arc3(p1, p2, p3,n_points)
 % arc3: Compute the center, radii, angle and the reference frame of the arc passing through 3 points
 %
 %   Input:
@@ -44,7 +44,7 @@ function arc_points = arc3(p1, p2, p3)
     end
     
     % ! CHANGE HERE
-    al = linspace(0, al3, 100);
+    al = linspace(0, al3, n_points);
     c = (cos(al)'*X + sin(al)'*Y)*r + p;
     arc_points = c;
 

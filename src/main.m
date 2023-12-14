@@ -6,16 +6,23 @@ addpath("../files");
 addpath("./lib")
 addpath(getenv("RI_LIB"))
 
+
+%* -------------------
+%* Parameters
+%* -------------------
+
+config.tree_ofset = 4750 + 100;
+n_points = 30;
+
 %* -------------------
 %* Tree Initialization
 %* -------------------
-% config.tree_ofset = 4750;
-config.tree_ofset = 4750 + 100;
 
-% Import the VRML file (or the appropriate file format)
+% Import the STL file 
 [F_log, V_log] = stlread("../models/Whole_Tree - Log-1.STL");
 [F_cone, V_cone] = stlread("../models/Whole_Tree - Tree_Cone-1.STL");
 [F_aux_cone, V_aux_cone] = stlread("../models/Whole_Tree - Auxiliar_Cone-1.STL");
+
 % Create a figure
 figure;
 
@@ -52,6 +59,7 @@ TH = 4000;
 TB = 3400;
 n = 1;
 
+
 %* Generating edge points
 for i = 1:10
     radius = (((((TH / 5) * n) / TH) * TB) / 2);
@@ -87,7 +95,7 @@ for i = 1:10
         point1 = edge_points(:, i);
         point2 = edge_points(:, i + 1);
 
-        linear_points = linspaceVect(point1, point2, 100);
+        linear_points = linspaceVect(point1, point2, n_points);
 
         trajectory_points = [trajectory_points linear_points];
 
@@ -99,35 +107,35 @@ for i = 1:10
         point3 = (point1 + point2) / 2;
         point3(1) = first_vertical_point(1) - radius;
 
-        arc_points = arc3(point1', point3', point2'); % Points for 1 arc
+        arc_points = arc3(point1', point3', point2',n_points); % Points for 1 arc
         arc_points = arc_points';
 
         % Specify the radius of the circle
-
         trajectory_points = [trajectory_points arc_points];
 
         if mod(i, 2) == 0
             n = n +1;
         end
-
     end
-
     linear_generation = linear_generation * (-1);
-
 end
 
 
 %* Drawing line
-% h_trajectory = line(edge_points(1, :), edge_points(2, :), edge_points(3, :), 'LineWidth', 3, 'Marker', '.', 'MarkerSize', 20);
 h_trajectory = line(trajectory_points(1, :), trajectory_points(2, :), trajectory_points(3, :), 'LineWidth', 3, 'Marker', '.', 'MarkerSize', 20);
 
 %* Calculating mid arc points :
 
 mid_arc_points = [];
+mid_arc_idx = n_points+ceil(n_points/2)
 
-for i = 1:2:9
-    mid_arc_points = [mid_arc_points, [trajectory_points(1, i * 100 + 51), trajectory_points(2, i * 100 + 51), trajectory_points(3, i * 100 + 51)]'];
+mid_arc_points = [mid_arc_points, [trajectory_points(1, mid_arc_idx), trajectory_points(2, mid_arc_idx), trajectory_points(3,mid_arc_idx )]'];
+for i = 2:2:8
+    % mid_arc_points = [mid_arc_points, [trajectory_points(1, i * 100 + 51), trajectory_points(2, i * 100 + 51), trajectory_points(3, i * 100 + 51)]'];
+    mid_arc_points = [mid_arc_points, [trajectory_points(1, i *n_points + mid_arc_idx), trajectory_points(2, i *n_points+ mid_arc_idx), trajectory_points(3,i*n_points+ mid_arc_idx )]'];
+
 end
+last_middle_point = mid_arc_points(:,end);
 
 %* Computing phi from coordinates
 
@@ -145,21 +153,39 @@ for i = 1:length(trajectory_points)
     vector2 = Pf - first_vertical_point;
 
     %!!! Need to round because was giving very small complex numbers when it was close to 1
-    phi = acos(round(dot(vector1, vector2) / (norm(vector1) * norm(vector2)), 3));
-    cross_vect = cross(vector1, vector2);
+    
+    if norm(vector2) == 0
+        phi = 0;
+    else
+        phi = acos(round(dot(vector1, vector2) / (norm(vector1) * norm(vector2)), 3));
+        cross_vect = cross(vector1, vector2);
 
-    if cross_vect(3) > 0
-        phi = -phi;
+        if cross_vect(3) > 0
+            phi = -phi;
+        end
     end
 
     trajectory_points_w_phi(1:3,i) = [x,y,z]';
     trajectory_points_w_phi(4:5,i) = 0;
     trajectory_points_w_phi(6,i) = phi;
-
 end
+    % For it not to jerk initially
+    trajectory_points_w_phi(6,1) = trajectory_points_w_phi(6,3) ;
 
+    % * Adding initial descend and ascend along the middle of the tree
+    middle_descent_points = linspaceVect(first_vertical_point,last_middle_point,n_points);
+    middle_ascent_points = linspaceVect(last_middle_point,first_vertical_point,n_points);
 
+    middle_ascent_points(4:5,:) = 0;
+    middle_descent_points(4:5,:) = 0;
 
+    middle_ascent_points(6,:) = 0;
+    middle_descent_points(6,:) = 0;
+
+    trajectory_points_w_phi = [trajectory_points_w_phi(:,1), middle_descent_points,middle_ascent_points,trajectory_points_w_phi(:,2:end)];
+
+    %* Drawing line
+    % h_trajectory_full = line(trajectory_points_w_phi(1, :), trajectory_points_w_phi(2, :), trajectory_points_w_phi(3, :), 'LineWidth', 3, 'Marker', '.', 'MarkerSize', 15);
 %* ------------------------
 %* Loading robot parameters
 %* ------------------------
@@ -220,8 +246,6 @@ theta_6 = 0;
 theta_7 = 0;
 theta_8 = 0;
 theta_9 = 0;
-
-% I would just refactor but matlab doesn't even have a good refactoring :C
 
 dimensions.La = La;
 dimensions.Lb = Lb;
@@ -296,11 +320,11 @@ NN = 100;
 % % Initial state of every joint
 q1 = [theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, d7, theta_8, theta_9]';
 
-start_point = 101;
+start_point = 3;
 end_point = length(trajectory_points);
 
 % Final state of every joint after first move
-Q19 = invKinGlobal(trajectory_points_w_phi(1, start_point), trajectory_points_w_phi(2, start_point), trajectory_points_w_phi(3, start_point),trajectory_points_w_phi(6, start_point), dimensions, first_vertical_point);
+Q19 = invKinGlobal(trajectory_points_w_phi(1, start_point), trajectory_points_w_phi(2, start_point), trajectory_points_w_phi(3, start_point),trajectory_points_w_phi(6, start_point), dimensions, first_vertical_point,last_middle_point);
 
 theta_1 = Q19(1);
 
@@ -314,10 +338,6 @@ d7 = Q19(7);
 theta_8 = Q19(8);
 theta_9 = Q19(9);
 
-% To get it fixed at the vertical aligned heigth
-% theta_2 = -acos(Ld / Lb);
-% theta_3 = -theta_2;
-
 q2 = [theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, d7, theta_8, theta_9]';
 
 QQ = [q1, q2];
@@ -327,7 +347,8 @@ q1 = q2;
 [H, h, P, AAA] = initRobot(QQ, NN, DH, jTypes, sScale);
 
 waitforbuttonpress
-animateRobot(H, AAA, P, h, 0.05, 0, robot);
+hold on
+animateRobot(H, AAA, P, h, 0.05, 1, robot);
 
 %* -------------------------------
 %* Inverse Kinematics
@@ -337,7 +358,7 @@ d7s = [];
 
 for i = start_point + 1:end_point - 1
 
-    Q19 = invKinGlobal(trajectory_points_w_phi(1, i + 1), trajectory_points_w_phi(2, i + 1), trajectory_points_w_phi(3, i + 1),trajectory_points_w_phi(6, i + 1), dimensions, first_vertical_point); 
+    Q19 = invKinGlobal(trajectory_points_w_phi(1, i + 1), trajectory_points_w_phi(2, i + 1), trajectory_points_w_phi(3, i + 1),trajectory_points_w_phi(6, i + 1), dimensions, first_vertical_point,last_middle_point);
 
     theta_1 = Q19(1);
 
@@ -360,14 +381,16 @@ for i = start_point + 1:end_point - 1
     MDH = generateMultiDH2(DH, QQ, jTypes);
     AAA = calculateRobotMotion(MDH);
 
-    animateRobot(H, AAA, P, h, 0.01, 0, robot)
+    animateRobot(H, AAA, P, h, 0.01, 1, robot)
 
     q1 = q2;
 end
 
+hold off
 %* -------------------------------
 %* Plotting Prismatic Joint Values
 %* -------------------------------
+figure
 plot(d7s)
 
 hold on

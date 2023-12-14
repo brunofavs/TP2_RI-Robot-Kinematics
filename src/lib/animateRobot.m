@@ -22,7 +22,6 @@ function animateRobot(H, AAA, P, h, sd, plotpath, robot)
         % joint_point_field_names = fieldnames(robot.homogenous_vertices);
         % joint_handlers_field_names = fieldnames(robot.handlers);
         
-        T = eye(4);
         total_rot = eye(4);
         % for j = 1:size(AAA, 3)
         for j = 1:7
@@ -49,7 +48,14 @@ function animateRobot(H, AAA, P, h, sd, plotpath, robot)
 
         if plotpath
             X = T(1, 4); Y = T(2, 4); Z = T(3, 4);
-            plot3(X, Y, Z, '.r', 'MarkerSize', 6);
+            plot3(X, Y, Z, '.r', 'MarkerSize', 20);
+
+            % disp("X")
+            % disp(X)
+            % disp("Y")
+            % disp(Y)
+            % disp("Z")
+            % disp(Z)
         end
 
         pause(sd)
