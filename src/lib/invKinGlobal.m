@@ -83,7 +83,7 @@ function Q19 = invKinGlobal(x, y, z,phi, dimensions, first_vertical_point,last_m
     
     inputMin = 0;
     inputMax = 6000;
-    outputMax = 1.3;
+    outputMax = 1.4;
     outputMin = 0.5;
     
     adjustment = (z - inputMin) / (inputMax - inputMin) * (outputMax - outputMin) + outputMin;

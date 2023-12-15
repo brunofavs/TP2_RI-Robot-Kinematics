@@ -6,20 +6,21 @@ addpath("../files");
 addpath("./lib")
 addpath(getenv("RI_LIB"))
 
-
 %* -------------------
 %* Parameters
 %* -------------------
 
 config.tree_ofset = 4750 + 100;
-n_points = 30;
+n_points = 20;
 
 %* -------------------
 %* Tree Initialization
 %* -------------------
 
-% Import the STL file 
-[F_log, V_log] = stlread("../models/Whole_Tree - Log-1.STL");
+% Import the STL file
+% [F_log, V_log] = stlread("../models/Whole_Tree - Log-1.STL");
+[V_log,F_log,~,~,~] = stlread2("../models/Whole_Tree - Log-1.STL");
+
 [F_cone, V_cone] = stlread("../models/Whole_Tree - Tree_Cone-1.STL");
 [F_aux_cone, V_aux_cone] = stlread("../models/Whole_Tree - Auxiliar_Cone-1.STL");
 
@@ -58,7 +59,6 @@ flip_flop = 1;
 TH = 4000;
 TB = 3400;
 n = 1;
-
 
 %* Generating edge points
 for i = 1:10
@@ -107,7 +107,7 @@ for i = 1:10
         point3 = (point1 + point2) / 2;
         point3(1) = first_vertical_point(1) - radius;
 
-        arc_points = arc3(point1', point3', point2',n_points); % Points for 1 arc
+        arc_points = arc3(point1', point3', point2', n_points); % Points for 1 arc
         arc_points = arc_points';
 
         % Specify the radius of the circle
@@ -116,10 +116,11 @@ for i = 1:10
         if mod(i, 2) == 0
             n = n +1;
         end
+
     end
+
     linear_generation = linear_generation * (-1);
 end
-
 
 %* Drawing line
 h_trajectory = line(trajectory_points(1, :), trajectory_points(2, :), trajectory_points(3, :), 'LineWidth', 3, 'Marker', '.', 'MarkerSize', 20);
@@ -127,65 +128,67 @@ h_trajectory = line(trajectory_points(1, :), trajectory_points(2, :), trajectory
 %* Calculating mid arc points :
 
 mid_arc_points = [];
-mid_arc_idx = n_points+ceil(n_points/2)
+mid_arc_idx = n_points + ceil(n_points / 2);
+mid_arc_points = [mid_arc_points, [trajectory_points(1, mid_arc_idx), trajectory_points(2, mid_arc_idx), trajectory_points(3, mid_arc_idx)]'];
 
-mid_arc_points = [mid_arc_points, [trajectory_points(1, mid_arc_idx), trajectory_points(2, mid_arc_idx), trajectory_points(3,mid_arc_idx )]'];
 for i = 2:2:8
-    % mid_arc_points = [mid_arc_points, [trajectory_points(1, i * 100 + 51), trajectory_points(2, i * 100 + 51), trajectory_points(3, i * 100 + 51)]'];
-    mid_arc_points = [mid_arc_points, [trajectory_points(1, i *n_points + mid_arc_idx), trajectory_points(2, i *n_points+ mid_arc_idx), trajectory_points(3,i*n_points+ mid_arc_idx )]'];
-
+    mid_arc_points = [mid_arc_points, [trajectory_points(1, i * n_points + mid_arc_idx), trajectory_points(2, i * n_points + mid_arc_idx), trajectory_points(3, i * n_points + mid_arc_idx)]'];
 end
-last_middle_point = mid_arc_points(:,end);
+
+last_middle_point = mid_arc_points(:, end);
 
 %* Computing phi from coordinates
 
 trajectory_points_w_phi = [];
-    
+
 for i = 1:length(trajectory_points)
 
-    x = trajectory_points(1,i);
-    y = trajectory_points(2,i);
-    z = trajectory_points(3,i);
+    x = trajectory_points(1, i);
+    y = trajectory_points(2, i);
+    z = trajectory_points(3, i);
+
 
     Pf = [x; y; z];
-    %? Where tf did this came from ?
-    vector1 = [-339.99, 3.535, -800]';
+    % vector1 = [-339.99, 3.535, -800]';
+    vector1 = [-340, 0, -800]';
     vector2 = Pf - first_vertical_point;
 
-    %!!! Need to round because was giving very small complex numbers when it was close to 1
     
     if norm(vector2) == 0
         phi = 0;
     else
+        %!!! Need to round because was giving very small complex numbers when it was close to 1
         phi = acos(round(dot(vector1, vector2) / (norm(vector1) * norm(vector2)), 3));
         cross_vect = cross(vector1, vector2);
 
         if cross_vect(3) > 0
             phi = -phi;
         end
+
     end
 
-    trajectory_points_w_phi(1:3,i) = [x,y,z]';
-    trajectory_points_w_phi(4:5,i) = 0;
-    trajectory_points_w_phi(6,i) = phi;
+    trajectory_points_w_phi(1:3, i) = [x, y, z]';
+    trajectory_points_w_phi(4:5, i) = 0;
+    trajectory_points_w_phi(6, i) = phi;
 end
-    % For it not to jerk initially
-    trajectory_points_w_phi(6,1) = trajectory_points_w_phi(6,3) ;
 
-    % * Adding initial descend and ascend along the middle of the tree
-    middle_descent_points = linspaceVect(first_vertical_point,last_middle_point,n_points);
-    middle_ascent_points = linspaceVect(last_middle_point,first_vertical_point,n_points);
+% For it not to jerk initially
+trajectory_points_w_phi(6, 1) = trajectory_points_w_phi(6, 3);
 
-    middle_ascent_points(4:5,:) = 0;
-    middle_descent_points(4:5,:) = 0;
+% * Adding initial descend and ascend along the middle of the tree
+middle_descent_points = linspaceVect(first_vertical_point, last_middle_point, 2*n_points);
+middle_ascent_points = linspaceVect(last_middle_point, first_vertical_point, 2*n_points);
 
-    middle_ascent_points(6,:) = 0;
-    middle_descent_points(6,:) = 0;
+middle_ascent_points(4:5, :) = 0;
+middle_descent_points(4:5, :) = 0;
 
-    trajectory_points_w_phi = [trajectory_points_w_phi(:,1), middle_descent_points,middle_ascent_points,trajectory_points_w_phi(:,2:end)];
+middle_ascent_points(6, :) = 0;
+middle_descent_points(6, :) = 0;
 
-    %* Drawing line
-    % h_trajectory_full = line(trajectory_points_w_phi(1, :), trajectory_points_w_phi(2, :), trajectory_points_w_phi(3, :), 'LineWidth', 3, 'Marker', '.', 'MarkerSize', 15);
+trajectory_points_w_phi = [trajectory_points_w_phi(:, 1), middle_descent_points, middle_ascent_points, trajectory_points_w_phi(:, 2:end)];
+
+%* Drawing line
+% h_trajectory_full = line(trajectory_points_w_phi(1, :), trajectory_points_w_phi(2, :), trajectory_points_w_phi(3, :), 'LineWidth', 3, 'Marker', '.', 'MarkerSize', 15);
 %* ------------------------
 %* Loading robot parameters
 %* ------------------------
@@ -206,15 +209,16 @@ try
             try
                 eval(sdata{i});
             catch
-                sprintf('Bad format in line %d of data file!',i)
+                sprintf('Bad format in line %d of data file!', i)
             end
 
         end
 
         Lf_min = Lf;
-        Lf_max = Lf_min *1.7;
+        Lf_max = Lf_min * 1.7;
         dLf_max = Lf_max - Lf_min;
         d7 = 0;
+        disp("Sucessfuly read robot parameters")
 
         clear i tfid ndata tdata sdata
     end
@@ -253,7 +257,7 @@ dimensions.Lc = Lc;
 dimensions.Ld = Ld;
 dimensions.Le = Le;
 dimensions.Lf_min = Lf_min;
-dimensions.Lf_max = Lf_min*1.7;
+dimensions.Lf_max = Lf_min * 1.7;
 dimensions.dLf_max = Lf_max - Lf_min;
 dimensions.d7 = 0;
 dimensions.Lg = 970;
@@ -263,38 +267,45 @@ dimensions.Lh = 1150;
 %* Drawing robot joints
 %* --------------------
 
-% [F_jointA, V_jointA] = stlread("../models/EloA_Y.STL");
-% [F_jointB, V_jointB] = stlread("../models/EloB_-X.STL");
-% [F_jointC, V_jointC] = stlread("../models/EloC_-X.STL");
-% [F_jointD, V_jointD] = stlread("../models/EloD_-X.STL");
-% [F_jointE, V_jointE] = stlread("../models/EloE_-X.STL");
 
-% [F_jointF, V_jointF] = stlread("../models/EloF_min_-Y.STL");
-% [F_jointFvar, V_jointFvar] = stlread("../models/EloF_var_-Y.STL");
-% [F_jointG, V_jointG] = stlread("../models/EloG_-X.STL");
-% % [F_jointH, V_jointH] = stlread("../models/EloH_-X.STL");
 
-% robot.handlers.jointA = patch('Vertices', V_jointA, 'Faces', F_jointA, 'FaceColor', '#1f0aff', 'EdgeAlpha', 0.1);
-% robot.handlers.jointB = patch('Vertices', V_jointB, 'Faces', F_jointB, 'FaceColor', '#d91c1c', 'EdgeAlpha', 0.1);
-% robot.handlers.jointC = patch('Vertices', V_jointC, 'Faces', F_jointC, 'FaceColor', '#1f0aff', 'EdgeAlpha', 0.1);
-% robot.handlers.jointD = patch('Vertices', V_jointD, 'Faces', F_jointD, 'FaceColor', '#d91c1c', 'EdgeAlpha', 0.1);
-% robot.handlers.jointE = patch('Vertices', V_jointE, 'Faces', F_jointE, 'FaceColor', '#1f0aff', 'EdgeAlpha', 0.1);
-% robot.handlers.jointF = patch('Vertices', V_jointF, 'Faces', F_jointF, 'FaceColor', '#d91c1c', 'EdgeAlpha', 0.1);
-% robot.handlers.jointFvar = patch('Vertices', V_jointFvar, 'Faces', F_jointFvar, 'FaceColor', '#d91c1c', 'EdgeAlpha', 0.1);
-% robot.handlers.jointG = patch('Vertices', V_jointG, 'Faces', F_jointG, 'FaceColor', '#1f0aff', 'EdgeAlpha', 0.1);
-% % robot.handlers.jointH = patch('Vertices', V_jointH, 'Faces', F_jointH, 'FaceColor', '#d91c1c', 'EdgeAlpha', 0.1);
+[V_jointA,F_jointA,~,~,~] = stlread2("../models/EloA_Y.STL");
+[V_jointB, F_jointB,~,~,~] = stlread2("../models/EloB_-X.STL");
+[V_jointC, F_jointC,~,~,~] = stlread2("../models/EloC_-X.STL");
+[V_jointD, F_jointD,~,~,~] = stlread2("../models/EloD_-X.STL");
+[V_jointE, F_jointE,~,~,~] = stlread2("../models/EloE_-X.STL");
 
-% robot.homogenous_vertices.jointA = [V_jointA'; ones(1, size(V_jointA, 1))];
-% robot.homogenous_vertices.jointB = trans(-Lb-200,0,0)*[V_jointB'; ones(1, size(V_jointB, 1))];
-% robot.homogenous_vertices.jointC = trans(-Lc-200,0,0)*[V_jointC'; ones(1, size(V_jointC, 1))];
-% robot.homogenous_vertices.jointD = trans(-Ld,0,0)*[V_jointD'; ones(1, size(V_jointD, 1))];
-% robot.homogenous_vertices.jointE = trans(-Le-200,0,0)*[V_jointE'; ones(1, size(V_jointE, 1))];
-% robot.homogenous_vertices.jointF = [V_jointF'; ones(1, size(V_jointF, 1))];
-% robot.homogenous_vertices.jointFvar = [V_jointFvar'; ones(1, size(V_jointFvar, 1))];
-% robot.homogenous_vertices.jointG =trans(-Lg-200,0,0)*[V_jointG'; ones(1, size(V_jointG, 1))];
-% %robot.homogenous_vertices.jointH = [V_jointH'; ones(1, size(V_jointH, 1))];
+[V_jointF, F_jointF,~,~,~] =          stlread2("../models/EloF_min_-Y.STL");
+[V_jointFvar, F_jointFvar,~,~,~] =    stlread2("../models/EloF_var_-Y.STL");
+[V_jointG, F_jointG,~,~,~] =          stlread2("../models/EloG_-X.STL");
+[V_jointH, F_jointH,~,~,~] =          stlread2("../models/tool.STL");
 
-robot.aa = 0
+color1 =  '#e3e31e';
+% color2 = '#d91c1c';
+color2 = '#292903';
+
+robot.handlers.jointA = patch('Vertices', V_jointA, 'Faces', F_jointA, 'FaceColor', color1, 'EdgeAlpha', 0.1);
+robot.handlers.jointB = patch('Vertices', V_jointB, 'Faces', F_jointB, 'FaceColor', color2, 'EdgeAlpha', 0.1);
+robot.handlers.jointC = patch('Vertices', V_jointC, 'Faces', F_jointC, 'FaceColor', color1, 'EdgeAlpha', 0.1);
+robot.handlers.jointD = patch('Vertices', V_jointD, 'Faces', F_jointD, 'FaceColor', color2, 'EdgeAlpha', 0.1);
+robot.handlers.jointE = patch('Vertices', V_jointE, 'Faces', F_jointE, 'FaceColor', color1, 'EdgeAlpha', 0.1);
+robot.handlers.jointF = patch('Vertices', V_jointF, 'Faces', F_jointF, 'FaceColor', color2, 'EdgeAlpha', 0.1);
+robot.handlers.jointFvar = patch('Vertices', V_jointFvar, 'Faces', F_jointFvar, 'FaceColor', color1, 'EdgeAlpha', 0.1);
+robot.handlers.jointG = patch('Vertices', V_jointG, 'Faces', F_jointG, 'FaceColor', color2, 'EdgeAlpha', 0.1);
+robot.handlers.jointH = patch('Vertices', V_jointH, 'Faces', F_jointH, 'FaceColor', color1, 'EdgeAlpha', 0.1);
+
+robot.homogenous_vertices.jointA =                      [V_jointA'; ones(1, size(V_jointA, 1))];
+robot.homogenous_vertices.jointB = trans(-Lb-200,0,0)*  [V_jointB'; ones(1, size(V_jointB, 1))];
+robot.homogenous_vertices.jointC = trans(-Lc-200,0,0)*  [V_jointC'; ones(1, size(V_jointC, 1))];
+robot.homogenous_vertices.jointD = trans(-Ld,0,0)*      [V_jointD'; ones(1, size(V_jointD, 1))];
+robot.homogenous_vertices.jointE = trans(-Le-200,0,0)*  [V_jointE'; ones(1, size(V_jointE, 1))];
+robot.homogenous_vertices.jointF =                      [V_jointF'; ones(1, size(V_jointF, 1))];
+robot.homogenous_vertices.jointFvar =                   [V_jointFvar'; ones(1, size(V_jointFvar, 1))];
+robot.homogenous_vertices.jointG =trans(-Lg,0,0)*   [V_jointG'; ones(1, size(V_jointG, 1))];
+robot.homogenous_vertices.jointH = [V_jointH'; ones(1, size(V_jointH, 1))];
+
+robot.dimensions = dimensions;
+
 
 %* ---------------------------------
 %* Declaring DH matrix
@@ -310,45 +321,25 @@ DH = [theta_1, 0, La, -pi / 2;
       pi / 2 + theta_8, Lg, 0, pi / 2;
       theta_9, Lh, 0, 0];
 
-%* ---------------------------------
-%* Inverse Kinematics Initialization
-%* ---------------------------------
-
-jTypes = [0, 0, 0, 0, 0, 0, 1, 0, 0];
-sScale = 400;
-NN = 100;
-% % Initial state of every joint
+      %* ---------------------------------
+      %* Robot Initialization
+      %* ---------------------------------
+      
+      jTypes = [0, 0, 0, 0, 0, 0, 1, 0, 0];
+      sScale = 400;
+      NN = 100;
+      % % Initial state of every joint
 q1 = [theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, d7, theta_8, theta_9]';
 
-start_point = 3;
-end_point = length(trajectory_points);
+start_point = 1;
+end_point = length(trajectory_points_w_phi);
 
-% Final state of every joint after first move
-Q19 = invKinGlobal(trajectory_points_w_phi(1, start_point), trajectory_points_w_phi(2, start_point), trajectory_points_w_phi(3, start_point),trajectory_points_w_phi(6, start_point), dimensions, first_vertical_point,last_middle_point);
-
-theta_1 = Q19(1);
-
-theta_2 = Q19(2);
-theta_3 = Q19(3);
-theta_4 = Q19(4);
-theta_5 = Q19(5);
-
-theta_6 = Q19(6);
-d7 = Q19(7);
-theta_8 = Q19(8);
-theta_9 = Q19(9);
-
-q2 = [theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, d7, theta_8, theta_9]';
-
-QQ = [q1, q2];
-
-q1 = q2;
+QQ = [q1, q1];
 
 [H, h, P, AAA] = initRobot(QQ, NN, DH, jTypes, sScale);
 
 waitforbuttonpress
 hold on
-animateRobot(H, AAA, P, h, 0.05, 1, robot);
 
 %* -------------------------------
 %* Inverse Kinematics
@@ -356,33 +347,58 @@ animateRobot(H, AAA, P, h, 0.05, 1, robot);
 
 d7s = [];
 
-for i = start_point + 1:end_point - 1
+for i = start_point:end_point
 
-    Q19 = invKinGlobal(trajectory_points_w_phi(1, i + 1), trajectory_points_w_phi(2, i + 1), trajectory_points_w_phi(3, i + 1),trajectory_points_w_phi(6, i + 1), dimensions, first_vertical_point,last_middle_point);
+    x = trajectory_points_w_phi(1, i);
+    y = trajectory_points_w_phi(2, i);
+    z = trajectory_points_w_phi(3, i);
+    
+    
+    % Q19 = invKinGlobal(trajectory_points_w_phi(1, i + 1), trajectory_points_w_phi(2, i + 1), trajectory_points_w_phi(3, i + 1),trajectory_points_w_phi(6, i + 1), dimensions, first_vertical_point,last_middle_point);
+    Q19 = invKinGlobal(x,y,z, trajectory_points_w_phi(6, i), dimensions, first_vertical_point, last_middle_point);
 
     theta_1 = Q19(1);
-
+    
     theta_2 = Q19(2);
     theta_3 = Q19(3);
     theta_4 = Q19(4);
     theta_5 = Q19(5);
-
+    
     theta_6 = Q19(6);
     d7 = Q19(7);
     theta_8 = Q19(8);
     theta_9 = Q19(9);
-
+    
     d7s = [d7s d7];
-
+    
     q2 = [theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, d7, theta_8, theta_9]';
 
+    %* Checking if the solution is valid
+    
+    if ~isreal(q2) || d7 > 0.7 * dimensions.Lf_min
+
+        fprintf("Point (%i,%i,%i) is out of reach\n", x,y,z)
+        return
+        
+    end
+
     QQ = [q1, q2];
+    
+    if i == start_point
+        MQ = [];
+        for k=1:size(QQ, 2)-1
+            MQ = [MQ linspaceVect(QQ(:,k), QQ(:,k+1), NN)];
+        end
+        MDH = generateMultiDH2(DH, MQ, jTypes);
 
-    MDH = generateMultiDH2(DH, QQ, jTypes);
+    else
+        MDH = generateMultiDH2(DH, QQ, jTypes);
+    end
+
     AAA = calculateRobotMotion(MDH);
-
-    animateRobot(H, AAA, P, h, 0.01, 1, robot)
-
+    
+    animateRobot(H, AAA, P, h, 0.001, 1, robot)
+    
     q1 = q2;
 end
 
@@ -402,3 +418,14 @@ plot(d7_limits, '-.')
 title('Prismatic Joint Extension')
 xlabel('Time')
 ylabel('Extension')
+
+% [F_jointA, V_jointA] = stlread("../models/EloA_Y.STL");
+% [F_jointB, V_jointB] = stlread("../models/EloB_-X.STL");
+% [F_jointC, V_jointC] = stlread("../models/EloC_-X.STL");
+% [F_jointD, V_jointD] = stlread("../models/EloD_-X.STL");
+% [F_jointE, V_jointE] = stlread("../models/EloE_-X.STL");
+
+% [F_jointF, V_jointF] = stlread("../models/EloF_min_-Y.STL");
+% [F_jointFvar, V_jointFvar] = stlread("../models/EloF_var_-Y.STL");
+% [F_jointG, V_jointG] = stlread("../models/EloG_-X.STL");
+% [F_jointH, V_jointH] = stlread("../models/EloH_-X.STL");
