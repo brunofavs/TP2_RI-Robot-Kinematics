@@ -1,4 +1,4 @@
-function Q19 = invKinGlobal(x, y, z,phi, dimensions, first_vertical_point,last_middle_point)
+function Q19 = invKinGlobal(x, y, z,phi, dimensions, first_vertical_point)
 
     addpath("./lib")
 
@@ -83,7 +83,7 @@ function Q19 = invKinGlobal(x, y, z,phi, dimensions, first_vertical_point,last_m
     
     inputMin = 0;
     inputMax = 6000;
-    outputMax = 1.3;
+    outputMax = 1.4;
     outputMin = 0.5;
     
     adjustment = (z - inputMin) / (inputMax - inputMin) * (outputMax - outputMin) + outputMin;
@@ -91,7 +91,6 @@ function Q19 = invKinGlobal(x, y, z,phi, dimensions, first_vertical_point,last_m
 
     %  What to input to the lift
     
-    % Q25 = invKinLift(3000,-2000,0,La,Lb, Lc, Ld)
     Q25 = invKinLift(P_final_lift(1), -P_final_lift(3) + 300, 0, La, Lb, Lc, Ld);
 
     Q19(7) = d7 - Lf_min * (adjustment);
