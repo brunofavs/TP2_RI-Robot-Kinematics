@@ -148,12 +148,13 @@ for i = 1:length(trajectory_points)
     z = trajectory_points(3, i);
 
 
-% z is equal to fvp so that v2 has z = 0
-% vector1 = [-340, 0, -800]';
-% Pf = [x; y; z];
+    % z is equal to fvp so that v2 has z = 0
+    vector1 = [-340, 0, -800]';
+    Pf = [x; y; z];
 
-    Pf = [x; y; first_vertical_point(3)];
-    vector1 = [-1, 0, 0]';
+    % Pf = [x; y; first_vertical_point(3)];
+    % vector1 = [-1, 0, 0]';
+    
     vector2 = Pf - first_vertical_point;
     
     if norm(vector2) == 0
@@ -339,7 +340,6 @@ QQ = [q1, q1];
 
 [H, h, P, AAA] = initRobot(QQ, NN, DH, jTypes, sScale);
 
-waitforbuttonpress
 hold on
 
 %* -------------------------------
@@ -351,82 +351,93 @@ d7s = [];
 for i = start_point:end_point
 % for i = start_point:1
 
-    x = trajectory_points_w_phi(1, i);
-    y = trajectory_points_w_phi(2, i);
-    z = trajectory_points_w_phi(3, i);
-    
-    
-    Q19 = invKinGlobal(x,y,z, trajectory_points_w_phi(6, i), dimensions, first_vertical_point);
+x = trajectory_points_w_phi(1, i);
+y = trajectory_points_w_phi(2, i);
+z = trajectory_points_w_phi(3, i);
 
-    theta_1 = Q19(1);
-    
-    theta_2 = Q19(2);
-    theta_3 = Q19(3);
-    theta_4 = Q19(4);
-    theta_5 = Q19(5);
-    
-    theta_6 = Q19(6);
-    d7 = Q19(7);
-    theta_8 = Q19(8);
-    theta_9 = Q19(9);
-    
-    d7s = [d7s d7];
-    
-    q2 = [theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, d7, theta_8, theta_9]';
 
-    %* Checking if the solution is valid
-    if ~isreal(q2) || d7 > 0.7 * dimensions.Lf_min
+Q19 = invKinGlobal(x,y,z, trajectory_points_w_phi(6, i), dimensions, first_vertical_point);
 
-        fprintf("Point (%i,%i,%i) is out of reach\n", x,y,z)
-        %return
-        
-    end
+theta_1 = Q19(1);
 
-    QQ = [q1, q2];
+theta_2 = Q19(2);
+theta_3 = Q19(3);
+theta_4 = Q19(4);
+theta_5 = Q19(5);
+
+theta_6 = Q19(6);
+d7 = Q19(7);
+theta_8 = Q19(8);
+theta_9 = Q19(9);
+
+d7s = [d7s d7];
+
+q2 = [theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, d7, theta_8, theta_9]';
+
+%* Checking if the solution is valid
+if ~isreal(q2) || d7 > 0.7 * dimensions.Lf_min
     
-    if i == start_point
-        MQ = [];
-        for k=1:size(QQ, 2)-1
-            MQ = [MQ linspaceVect(QQ(:,k), QQ(:,k+1), NN)];
-        end
-        MDH = generateMultiDH2(DH, MQ, jTypes);
-
-    else
-        MDH = generateMultiDH2(DH, QQ, jTypes);
-    end
-
-    AAA = calculateRobotMotion(MDH);
+    fprintf("Point (%i,%i,%i) is out of reach\n", x,y,z)
+    return
     
-    animateRobot(H, AAA, P, h, 0.05, 1, robot)
-    
-    q1 = q2;
 end
 
-return
+if i == start_point
+
+        QQ = [q1, q2];
+        
+        if i == start_point
+            MQ = [];
+            for k=1:size(QQ, 2)-1
+                MQ = [MQ linspaceVect(QQ(:,k), QQ(:,k+1), NN)];
+            end
+            MDH = generateMultiDH2(DH, MQ, jTypes);
+            
+        else
+            MDH = generateMultiDH2(DH, QQ, jTypes);
+        end
+        
+        waitforbuttonpress
+        AAA = calculateRobotMotion(MDH);
+    end
+
+    if i == end_point
+        
+        animateRobot(H, AAA, P, h, 0.05, 1, robot)
+        q1 = q2;
+    end
+end
+
 
 %* -------------------------------
 %* Differential Kinematics
 %* -------------------------------
 
-p1 = trajectory_points_w_phi(:,1);
-Qn = QQ(:,2)
-
-for i = 2:end_point
-
-    %* Checking if the solution is valid
-    
-    x = trajectory_points_w_phi(1, i);
-    y = trajectory_points_w_phi(2, i);
-    z = trajectory_points_w_phi(3, i);
-
-    Q19 = invKinGlobal(x,y,z, trajectory_points_w_phi(6, i), dimensions, first_vertical_point)
-    Q19(7)
-
-    if ~isreal(Q19) || Q19(7) > 0.7 * dimensions.Lf_min
-
-        fprintf("Point (%i,%i,%i) is out of reach\n", x,y,z)
-        return
+for i = 1:length(trajectory_points)
+    x = trajectory_points(1, i);
+    y = trajectory_points(2, i);
+    z = trajectory_points(3, i);
+    Pf = [x; y; first_vertical_point(3)];
+    vector1 = [-1, 0, 0]';
+    vector2 = Pf - first_vertical_point;
+    if norm(vector2) == 0
+        phi = 0;
+    else
+        phi = acos(round(dot(vector1, vector2) / (norm(vector1) * norm(vector2)), 3));
+        cross_vect = cross(vector1, vector2);
+        if cross_vect(3) > 0
+            phi = -phi;
+        end
     end
+    trajectory_points_w_phi(6, i) = phi;
+end
+
+trajectory_points_w_phi = [trajectory_points_w_phi(:, 1), middle_descent_points, middle_ascent_points, trajectory_points_w_phi(:, 2:end)];
+
+p1 = trajectory_points_w_phi(:,1);
+Qn = QQ(:,2);
+
+for i = 2:length(trajectory_points_w_phi)
     
     % Compute Jacobian dq --> dr
     trajectory_points_w_phi(6,i) = - trajectory_points_w_phi(6,i);
@@ -447,12 +458,27 @@ for i = 2:end_point
     animateRobot(H, AAA, P, h, 0.05, 1, robot);  
     
     T = eye(4);
-    for j = 1 : 9 % Joint loop Iterations
+    for j = 1 : 9 
         T = T * AAA(:,:,j);    
     end
     p1 = [T(1,4) T(2,4) T(3,4) p2(4,1) p2(5,1) p2(6,1)]';
     
 end
+
+%Back to home
+Qf1 = Qn;
+Qf1(1) = Qf1(1) - pi/8;
+Qf2 = [0,0,0,0,0,0,0,0,0]';
+QQ = [Qn,Qf1,Qf2];
+
+MQ = [];
+for k=1:size(QQ, 2)-1
+    MQ = [MQ linspaceVect(QQ(:,k), QQ(:,k+1), NN)];
+end
+MDH = generateMultiDH2(DH, MQ, jTypes);
+
+AAA = calculateRobotMotion(MDH);
+animateRobot(H, AAA, P, h, 0.05, 1, robot);  
 hold off
 
 %* -------------------------------

@@ -4,6 +4,7 @@ function Q = invKin69(x, y, z, Lh,Lf_min,Lg)
     %? Coordinates have to be in the relative frame, its kinda weird
 
 
+    % q9A =  asin(round(z/(Lh*1000000000000000000000000000000),1));
     q9A =  asin(round(z/(Lh*1000000000000000000000000000000),1));
     q9A = 0;
     q9 = [q9A , -q9A];
@@ -12,10 +13,6 @@ function Q = invKin69(x, y, z, Lh,Lf_min,Lg)
 
     q6 = atan(x./k_dem);
 
-    % disp("q6")
-    % disp(rad2deg(q6))
-    % disp("q9")
-    % disp(rad2deg(9))
 
     % d7_num = -(Lf_min*sin(atan(x./k_dem)))+x;
     d7_num = -(Lf_min*sin(atan2(x,k_dem)))+x; 
@@ -27,5 +24,18 @@ function Q = invKin69(x, y, z, Lh,Lf_min,Lg)
     d7 = d7_num./d7_dem;   
 
     q8 = -q6;
+
+    
     
     Q = [q6;d7;q8;q9];
+
+
+
+
+    
+    % q6 = - 2*atan((Lg - y + (Lg^2 - 2*Lg*y + x^2 + y^2)^(1/2))/x);
+    % q8 = -q6;
+
+    % d7 = (Lg^2 - 2*Lg*y + x^2 + y^2)^(1/2) - Lf_min;
+
+    % q9 = 0;

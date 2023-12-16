@@ -91,7 +91,6 @@ function Q19 = invKinGlobal(x, y, z,phi, dimensions, first_vertical_point)
 
     %  What to input to the lift
     
-    % Q25 = invKinLift(3000,-2000,0,La,Lb, Lc, Ld)
     Q25 = invKinLift(P_final_lift(1), -P_final_lift(3) + 300, 0, La, Lb, Lc, Ld);
 
     Q19(7) = d7 - Lf_min * (adjustment);
