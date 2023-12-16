@@ -148,11 +148,13 @@ for i = 1:length(trajectory_points)
     z = trajectory_points(3, i);
 
 
-    Pf = [x; y; z];
-    % vector1 = [-339.99, 3.535, -800]';
-    vector1 = [-340, 0, -800]';
-    vector2 = Pf - first_vertical_point;
+% z is equal to fvp so that v2 has z = 0
+% vector1 = [-340, 0, -800]';
+% Pf = [x; y; z];
 
+    Pf = [x; y; first_vertical_point(3)];
+    vector1 = [-1, 0, 0]';
+    vector2 = Pf - first_vertical_point;
     
     if norm(vector2) == 0
         phi = 0;
@@ -164,16 +166,17 @@ for i = 1:length(trajectory_points)
         if cross_vect(3) > 0
             phi = -phi;
         end
-
+    
     end
 
     trajectory_points_w_phi(1:3, i) = [x, y, z]';
     trajectory_points_w_phi(4:5, i) = 0;
     trajectory_points_w_phi(6, i) = phi;
+    
 end
 
 % For it not to jerk initially
-trajectory_points_w_phi(6, 1) = trajectory_points_w_phi(6, 3);
+% trajectory_points_w_phi(6, 1) = trajectory_points_w_phi(6, 3);
 
 % * Adding initial descend and ascend along the middle of the tree
 middle_descent_points = linspaceVect(first_vertical_point, last_middle_point, 2*n_points);
@@ -185,7 +188,7 @@ middle_descent_points(4:5, :) = 0;
 middle_ascent_points(6, :) = 0;
 middle_descent_points(6, :) = 0;
 
-trajectory_points_w_phi = [trajectory_points_w_phi(:, 1), middle_descent_points, middle_ascent_points, trajectory_points_w_phi(:, 2:end)];
+% trajectory_points_w_phi = [trajectory_points_w_phi(:, 1), middle_descent_points, middle_ascent_points, trajectory_points_w_phi(:, 2:end)];
 
 %* Drawing line
 % h_trajectory_full = line(trajectory_points_w_phi(1, :), trajectory_points_w_phi(2, :), trajectory_points_w_phi(3, :), 'LineWidth', 3, 'Marker', '.', 'MarkerSize', 15);
@@ -267,8 +270,6 @@ dimensions.Lh = 1150;
 %* Drawing robot joints
 %* --------------------
 
-
-
 [V_jointA,F_jointA,~,~,~] = stlread2("../models/EloA_Y.STL");
 [V_jointB, F_jointB,~,~,~] = stlread2("../models/EloB_-X.STL");
 [V_jointC, F_jointC,~,~,~] = stlread2("../models/EloC_-X.STL");
@@ -348,14 +349,14 @@ hold on
 d7s = [];
 
 for i = start_point:end_point
+% for i = start_point:1
 
     x = trajectory_points_w_phi(1, i);
     y = trajectory_points_w_phi(2, i);
     z = trajectory_points_w_phi(3, i);
     
     
-    % Q19 = invKinGlobal(trajectory_points_w_phi(1, i + 1), trajectory_points_w_phi(2, i + 1), trajectory_points_w_phi(3, i + 1),trajectory_points_w_phi(6, i + 1), dimensions, first_vertical_point,last_middle_point);
-    Q19 = invKinGlobal(x,y,z, trajectory_points_w_phi(6, i), dimensions, first_vertical_point, last_middle_point);
+    Q19 = invKinGlobal(x,y,z, trajectory_points_w_phi(6, i), dimensions, first_vertical_point);
 
     theta_1 = Q19(1);
     
@@ -374,11 +375,10 @@ for i = start_point:end_point
     q2 = [theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, d7, theta_8, theta_9]';
 
     %* Checking if the solution is valid
-    
     if ~isreal(q2) || d7 > 0.7 * dimensions.Lf_min
 
         fprintf("Point (%i,%i,%i) is out of reach\n", x,y,z)
-        return
+        %return
         
     end
 
@@ -397,12 +397,64 @@ for i = start_point:end_point
 
     AAA = calculateRobotMotion(MDH);
     
-    animateRobot(H, AAA, P, h, 0.001, 1, robot)
+    animateRobot(H, AAA, P, h, 0.05, 1, robot)
     
     q1 = q2;
 end
 
+return
+
+%* -------------------------------
+%* Differential Kinematics
+%* -------------------------------
+
+p1 = trajectory_points_w_phi(:,1);
+Qn = QQ(:,2)
+
+for i = 2:end_point
+
+    %* Checking if the solution is valid
+    
+    x = trajectory_points_w_phi(1, i);
+    y = trajectory_points_w_phi(2, i);
+    z = trajectory_points_w_phi(3, i);
+
+    Q19 = invKinGlobal(x,y,z, trajectory_points_w_phi(6, i), dimensions, first_vertical_point)
+    Q19(7)
+
+    if ~isreal(Q19) || Q19(7) > 0.7 * dimensions.Lf_min
+
+        fprintf("Point (%i,%i,%i) is out of reach\n", x,y,z)
+        return
+    end
+    
+    % Compute Jacobian dq --> dr
+    trajectory_points_w_phi(6,i) = - trajectory_points_w_phi(6,i);
+
+    p2 = trajectory_points_w_phi(:,i);
+    
+    dr = p2-p1;
+    
+    JJ = jacobianGeom2(DH,Qn,jTypes);
+    JJ_inv = pinv(JJ);
+    
+    dq = JJ_inv * dr;
+    
+    Qn = Qn + dq;
+    
+    MDH = generateMultiDH2(DH,Qn,jTypes);
+    AAA = calculateRobotMotion(MDH);
+    animateRobot(H, AAA, P, h, 0.05, 1, robot);  
+    
+    T = eye(4);
+    for j = 1 : 9 % Joint loop Iterations
+        T = T * AAA(:,:,j);    
+    end
+    p1 = [T(1,4) T(2,4) T(3,4) p2(4,1) p2(5,1) p2(6,1)]';
+    
+end
 hold off
+
 %* -------------------------------
 %* Plotting Prismatic Joint Values
 %* -------------------------------

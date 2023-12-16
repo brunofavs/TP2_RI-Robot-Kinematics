@@ -18,8 +18,6 @@ function animateRobot(H, AAA, P, h, sd, plotpath, robot)
             set(H(j), 'Vertices', Pk(1:3, :)'); %Update the H(j) patch
         end
 
-
-
         AAc(:,:,1) = AAA(:,:,1,k);
 
         for d=2:size(AAA,3)
@@ -62,30 +60,14 @@ function animateRobot(H, AAA, P, h, sd, plotpath, robot)
         P_joints = AAc(:,:,9) * trans(-robot.dimensions.Lh,-robot.dimensions.Lh/2,-1000)* robot.homogenous_vertices.jointH;
         set(robot.handlers.jointH, 'Vertices', P_joints(1:3, :)')
 
-        % % * Joint x
-        % P_joints = AAc(:,:,2) * robot.homogenous_vertices.jointx;
-        % set(robot.handlers.jointx, 'Vertices', P_joints(1:3, :)')
-
-
-
-
-
-
-
-
-
-
-
-
-
             if plotpath
                 X = T(1, 4); Y = T(2, 4); Z = T(3, 4);
                 plot3(X, Y, Z, '.r', 'MarkerSize', 20);
             end
             
+            pause(sd)
         end
         
-        pause(sd)
     end
 
 

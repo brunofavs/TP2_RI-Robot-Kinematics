@@ -1,4 +1,4 @@
-function Q19 = invKinGlobal(x, y, z,phi, dimensions, first_vertical_point,last_middle_point)
+function Q19 = invKinGlobal(x, y, z,phi, dimensions, first_vertical_point)
 
     addpath("./lib")
 
