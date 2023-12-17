@@ -24,10 +24,27 @@ n_points = 20;
 [F_cone, V_cone] = stlread("../models/Whole_Tree - Tree_Cone-1.STL");
 [F_aux_cone, V_aux_cone] = stlread("../models/Whole_Tree - Auxiliar_Cone-1.STL");
 
+
 % Create a figure
+[V_car,F_car,~,~,~] = stlread2("../models/car/Assem1-Part3Assem1-1.STL");
+[V_wheels,F_wheels,~,~,~] = stlread2("../models/car/Assem1-Part8Assem1-1.STL");
 figure;
 
+car_handler =patch('Vertices', V_car, 'Faces', F_car, 'FaceColor', '#e3e31e', 'EdgeAlpha', 0.2);
+wheels_handler = patch('Vertices', V_wheels, 'Faces', F_wheels, 'FaceColor', ' #575b2c', 'EdgeAlpha', 0.2); 
+
+V_car_homogenous = [V_car'; ones(1, size(V_car, 1))];
+V_wheels_homogenous = [V_wheels'; ones(1, size(V_wheels, 1))];
+
+car_transform = trans(-500,-500,0);
+V_car_homogenous = car_transform * V_car_homogenous;
+V_wheels_homogenous = car_transform * V_wheels_homogenous;
+
+car_handler.Vertices = V_car_homogenous(1:3, :)';
+wheels_handler.Vertices = V_wheels_homogenous(1:3, :)';
+
 % Plot the 3D model using patch
+
 tree.handlers.log = patch('Vertices', V_log, 'Faces', F_log, 'FaceColor', ' #575b2c', 'EdgeAlpha', 0);
 tree.handlers.cone = patch('Vertices', V_cone, 'Faces', F_cone, 'FaceColor', '#11ff14 ', 'EdgeAlpha', 0.1);
 tree.handlers.aux_cone = patch('Vertices', V_aux_cone, 'Faces', F_aux_cone, 'FaceColor', ' #34f637', 'FaceAlpha', 0.1, 'EdgeAlpha', 0);
@@ -45,8 +62,9 @@ tree.handlers.log.Vertices = V_log_homogenous(1:3, :)';
 tree.handlers.cone.Vertices = V_cone_homogenous(1:3, :)';
 tree.handlers.aux_cone.Vertices = V_aux_cone_homogenous(1:3, :)';
 
-% setViewOptionsDefault();
 setViewOptions([-1000, 10000, -5000, 5000, 0, 3000]);
+% setViewOptionsDefault();
+
 
 %* ---------------------------
 %* Computing trajectory points
@@ -286,7 +304,7 @@ color1 =  '#e3e31e';
 % color2 = '#d91c1c';
 color2 = '#292903';
 
-robot.handlers.jointA = patch('Vertices', V_jointA, 'Faces', F_jointA, 'FaceColor', color1, 'EdgeAlpha', 0.1);
+robot.handlers.jointA = patch('Vertices', V_jointA, 'Faces', F_jointA, 'FaceColor', color1, 'EdgeAlpha', 0.1); 
 robot.handlers.jointB = patch('Vertices', V_jointB, 'Faces', F_jointB, 'FaceColor', color2, 'EdgeAlpha', 0.1);
 robot.handlers.jointC = patch('Vertices', V_jointC, 'Faces', F_jointC, 'FaceColor', color1, 'EdgeAlpha', 0.1);
 robot.handlers.jointD = patch('Vertices', V_jointD, 'Faces', F_jointD, 'FaceColor', color2, 'EdgeAlpha', 0.1);
@@ -473,7 +491,7 @@ QQ = [Qn,Qf1,Qf2];
 
 MQ = [];
 for k=1:size(QQ, 2)-1
-    MQ = [MQ linspaceVect(QQ(:,k), QQ(:,k+1), NN)];
+    MQ = [MQ linspaceVect(QQ(:,k), QQ(:,k+1), 20)];
 end
 MDH = generateMultiDH2(DH, MQ, jTypes);
 
