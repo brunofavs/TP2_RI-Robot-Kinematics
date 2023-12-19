@@ -108,7 +108,7 @@ to accomplish the desired objective as stated in the previous section.
 The tree models were modeled in \textit{SolidWorks} and exported as
 \textit{STL's}. Afterwards, a script found ind
 \href{https://www.mathworks.com/matlabcentral/fileexchange/22409-stl-file-reader?s_tid=srchtitle}{\textit{Matlab's
-File Exchange}} was used to import the \textit{STL's} into \textit{Matlab} as
+        File Exchange}} was used to import the \textit{STL's} into \textit{Matlab} as
 patch objects. Being patch objects, any geometric transformation can be applied
 to them. This was done to position the tree at the correct position and modify
 the offset from the robot.
@@ -121,11 +121,11 @@ would've been easier. The procedure was the following:\begin{enumerate}
     \item Compute the end points of each segment based on the tree radius and height;
     \item Do linear interpolation for the linear segments
     \item Use the
-    \href{https://www.mathworks.com/matlabcentral/fileexchange/123050-3d-arc-passing-through-3-points?s_tid=srchtitle}{\textbf{arc3}}
-    to compute the point along the circular segments.\footnote{Unlike the first
-    project, here the third point required by the script was quite easy to
-    compute considering all circular segments are half full circles and were
-    always on the \textit{Oxy} plane}
+          \href{https://www.mathworks.com/matlabcentral/fileexchange/123050-3d-arc-passing-through-3-points?s_tid=srchtitle}{\textbf{arc3}}
+          to compute the point along the circular segments.\footnote{Unlike the first
+              project, here the third point required by the script was quite easy to
+              compute considering all circular segments are half full circles and were
+              always on the \textit{Oxy} plane}
 \end{enumerate}
 
 To compute the angle of the tool end point (TCP) of the crane, a simple dot
@@ -135,8 +135,8 @@ product of the vectors made by the points represented in the \hyperref[fig:psi]{
     \centering
     \includegraphics[scale=0.1]{resources/psi.jpeg}
     \caption{\label{fig:psi}$\psi$ computing based on a cross-section of the
-    tree}
-\footnote{The yellow square represents the operator's cabin}
+        tree}
+    \footnote{The yellow square represents the operator's cabin}
 \end{figure}
 
 The \hyperref[fig:psi]{figure} represents a cross-section of the tree for a given radius.
@@ -163,32 +163,32 @@ can be seen below:
 \end{figure}
 
 \begin{table}[H]
-\centering
-\begin{tabular}{|c|c|c|c|c|}
-\hline
-Joint & $\theta_i$ & $l_i$ & $d_i$ & $\alpha_i$ \\
-\hline
-1 & $\theta_1$ & 0 & $La$ & $-\frac{\pi}{2}$ \\
-\hline
-2 & $-\theta_2$ & $Lb$ & 0 & 0 \\
-\hline
-3 & $\theta_3 - \frac{\pi}{2}$ & $Lc$ & 0 & 0 \\
-\hline
-4 & $\theta_4 - \frac{\pi}{2}$ & $Ld$ & 0 & 0 \\
-\hline
-5 & $\theta_5 + \frac{\pi}{2}$ & $Le$ & 0 & 0 \\
-\hline
-6 & $\theta_6$ & 0 & 0 & $-\frac{\pi}{2}$ \\
-\hline
-7 & 0 & 0 & $Lf_{\text{min}} + d7$ & $\frac{\pi}{2}$ \\
-\hline
-8 & $\frac{\pi}{2} + \theta_8$ & $Lg$ & 0 & $\frac{\pi}{2}$ \\
-\hline
-9 & $\theta_9$ & $Lh$ & 0 & 0 \\
-\hline
-\end{tabular}
-\caption{DH table}
-\label{tab:dh}
+    \centering
+    \begin{tabular}{|c|c|c|c|c|}
+        \hline
+        Joint & $\theta_i$                 & $l_i$ & $d_i$                  & $\alpha_i$       \\
+        \hline
+        1     & $\theta_1$                 & 0     & $La$                   & $-\frac{\pi}{2}$ \\
+        \hline
+        2     & $-\theta_2$                & $Lb$  & 0                      & 0                \\
+        \hline
+        3     & $\theta_3 - \frac{\pi}{2}$ & $Lc$  & 0                      & 0                \\
+        \hline
+        4     & $\theta_4 - \frac{\pi}{2}$ & $Ld$  & 0                      & 0                \\
+        \hline
+        5     & $\theta_5 + \frac{\pi}{2}$ & $Le$  & 0                      & 0                \\
+        \hline
+        6     & $\theta_6$                 & 0     & 0                      & $-\frac{\pi}{2}$ \\
+        \hline
+        7     & 0                          & 0     & $Lf_{\text{min}} + d7$ & $\frac{\pi}{2}$  \\
+        \hline
+        8     & $\frac{\pi}{2} + \theta_8$ & $Lg$  & 0                      & $\frac{\pi}{2}$  \\
+        \hline
+        9     & $\theta_9$                 & $Lh$  & 0                      & 0                \\
+        \hline
+    \end{tabular}
+    \caption{DH table}
+    \label{tab:dh}
 \end{table}
 
 
@@ -217,29 +217,91 @@ With this simplification, the position elements of the AAA matrix from joint 6
 to 9 yields the following system of equations :
 
 \begin{equation}
-\begin{cases}
-    x_{69} = -\sin(\theta_6)(Lf_{\text{min}} + d7) \\
-    y_{69} = Lg + Lf_{\text{min}}\cos(\theta_6) + Lh\cos(\theta_9) + d7\cos(\theta_6) \\
-    z_{69} = Lh\sin(\theta_9)
-\end{cases}
+    \begin{cases}
+        x_{69} = -\sin(\theta_6)(Lf_{\text{min}} + d7)                                    \\
+        y_{69} = Lg + Lf_{\text{min}}\cos(\theta_6) + Lh\cos(\theta_9) + d7\cos(\theta_6) \\
+        z_{69} = Lh\sin(\theta_9)
+    \end{cases}
 \end{equation}
 
 Solving this system using Matlab's built-in solver gave the following results :
 
 \begin{equation}
-\begin{cases}
-    q_9 = arcsin(\frac{z_{69}}{L_h})\\
-    k = L_g + L_h*cos(q_9)-y_{69}\\
-    q_6 = artan(\frac{x_{69}}{k})\\
-    d_7 = \frac{sin(arctan(\frac{x_{69}}{k}))}{-L_{fMin}*sin(arctan(\frac{x}{k}))+x_{69}} 
-\end{cases}
+    \begin{cases}
+        q_9 = arcsin(\frac{z_{69}}{L_h}) \\
+        k = L_g + L_h*cos(q_9)-y_{69}    \\
+        q_6 = artan(\frac{x_{69}}{k})    \\
+        d_7 = \frac{sin(arctan(\frac{x_{69}}{k}))}{-L_{fMin}*sin(arctan(\frac{x}{k}))+x_{69}}
+    \end{cases}
 \end{equation}
+
+With this, the robot could go to the desired points, however 2 things were still wrong:\begin{itemize}
+    \item No orientation relative to the tree
+    \item The prismatic joint limit was being surpassed
+\end{itemize}
+
+This can be seen in the \hyperref[fig:69]{figure below}\footnote{This is a old
+    commit of the project, a lot of features were still missing and the path for
+    example was being wrongly displayed}.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[scale=0.2]{resources/69_no_orientation.jpg}
+    \caption{\label{fig:69} KI just with joints 6 to 9 unlocked}
+\end{figure}
+
+After, the next step was to unlock the base joint, to allow for redundancy and
+establish the desired orientation. The \hyperref[fig:theta_9]{figure} below
+shows a top view of the robot's joints for a given $\theta_6$ and $d_7$. From
+the figure using sin's law the equation for $theta_1$ and $\theta_9$ can be
+deduced. Here, the initial values for $\theta_6$ and $d_7$ were arbitrated to be
+the output from the previously computed \textit{KI} from joint 6 to 9.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[scale=0.15]{resources/theta_9.jpeg}
+    \caption{\label{fig:theta_9} Top view of the robot with orientation to the tree} 
+\end{figure}
+
+Using the terminology from the figure \ref{fig:theta_9}, a few things are worth highlighting:\begin{itemize}
+    \item $L_{fixed}$ is always the same known lengths;
+    \item $L_{angled}$ and $L_i$ change according to the values of the joints 6
+    and 7;
+    \item The following equations are valid only for the case where the joint 1
+    and 6 are vertically aligned. This will be further explained after.
+\end{itemize}
+
+Directly from sin's law comes :
+
+\begin{equation}
+    \frac{sin(\psi)}{L_{angled}}=\frac{sin(\theta_1)}{L_{fixed}} =\frac{sin(\pi-\theta_9)}{L_i}
+\end{equation}
+
+From here, $L_{angled}$ is still unknown, as the segment is longer and requires
+a new value of either $\theta_6$ or $d_7$. $L_{angled}$ was determined using the
+cosine's law :
+
+\begin{equation}
+L_{angled} = \sqrt{L_{fixed}^2 + L_i^2 - 2 \cdot L_{fixed} \cdot L_i \cdot \cos(\psi)}
+\end{equation}
+
+And the updated $d_7$ was computed like so:
+
+\begin{equation}
+    d_7 = \frac{{L_{angled} - L_{f_{min}} \cdot \cos(\left| \theta_6 \right|) - L_g}}{{\cos(\left| \theta_6 \right|)}}
+\end{equation}
+
+Solving these equations in order to $\theta_1$ and $\theta_9$ yields the new values,
+aligning the robot with the tree.
+
+
+
 
 
 
 \subsection{Differential Kinematics}
 
-\subsection{Prismatic Joint Limit Analysis} 
+\subsection{Prismatic Joint Limit Analysis}
 
 
 
@@ -249,8 +311,8 @@ Solving this system using Matlab's built-in solver gave the following results :
 \begin{itemize}
 
     \item Video links \begin{itemize}
-        \item \href{}{Demo Video}
-    \end{itemize}
+              \item \href{}{Demo Video}
+          \end{itemize}
 
     \item \href{https://github.com/brunofavs/TP2_RI}{Github Repository link}
 
